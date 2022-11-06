@@ -1,0 +1,22 @@
+[
+  {
+    "Key": "Name",
+    "Alias": "Müşteri Adı",
+    "Operator": "contains",
+    "Value": "Yılmaz",
+    "LogicalOperator": "or"
+  },
+  {
+    "Key": "Surname",
+    "Alias": "Soyadı",
+    "Operator": "equal",
+    "Value": "Buhar",
+    "LogicalOperator": "or"
+  },
+  {
+    "Key": "Company.Title",
+    "Operator": "equal",
+    "Value": "Test",
+    "LogicalOperator": "or"
+  }
+]
