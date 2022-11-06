@@ -13,6 +13,8 @@ namespace ExpressionTest
             if (string.IsNullOrEmpty(query))
                 return null;
 
+            // query item format may change for each ui library
+            // so we must seperate this formatter
             List<QueryItem> filterList = JsonConvert.DeserializeObject<List<QueryItem>>(query);
             Expression<Func<T, bool>> predicate = null;
 
@@ -24,6 +26,7 @@ namespace ExpressionTest
                 Expression<Func<T, bool>> returnExp = null;
                 PropertyInfo property = null;
 
+                //subtypes
                 string[] fieldPath = filter.Member.Split('.');
                 paramExp = Expression.Parameter(typeof(T));
 
@@ -46,8 +49,7 @@ namespace ExpressionTest
                     "startswith" => returnExp = StartsWith<T>(paramExp, left, right),
                     "notcontains" => NotContains<T>(paramExp, left, right),
                     "notstartwith" => NotStartsWith<T>(paramExp, left, right),
-                    // todo: type control
-                    // 
+                    // todo: type control for system.datetime or nullable types
                     "equal"=> Expression.Lambda<Func<T, bool>>(Expression.Equal(left, right), paramExp),
                 };
 
