@@ -7,4 +7,9 @@ public class Person
     public Team Team { get; set; }
     public Guid TeamId { get; set; }
 
+    public override string ToString()
+    {
+        return $"{Name} {Surname} with Id {Id.ToString()}";
+    }
+
 }

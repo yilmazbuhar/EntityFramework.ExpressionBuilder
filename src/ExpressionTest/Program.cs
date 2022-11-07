@@ -22,6 +22,12 @@ PredicateBuilder predicateBuilder = new PredicateBuilder();
 Expression<Func<Person, bool>> predicate = predicateBuilder.GenerateFilterPredicate<Person>(jsonFilter);
 
 var filteredcustomers = customerdb.Customer.Where(predicate).ToList();
+Console.WriteLine($"Filter for {jsonFilter}");
+Console.WriteLine($"------------------------------------");
+foreach (var item in filteredcustomers)
+{
+    Console.WriteLine(item.ToString());
+}
 
 
 Console.Read();

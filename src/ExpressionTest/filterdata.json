@@ -2,7 +2,7 @@
   {
     "Member": "Name",
     "Operator": "contains",
-    "Value": "s",
+    "Value": "S",
     "LogicalOperator": "or",
     "Active": true
   },
@@ -11,7 +11,7 @@
     "Operator": "equal",
     "Value": "Riley",
     "LogicalOperator": "or",
-    "Active": true
+    "Active": false
   },
   {
     "Member": "Company.Title",
