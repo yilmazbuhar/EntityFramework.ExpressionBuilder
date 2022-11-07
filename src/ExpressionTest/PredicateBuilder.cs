@@ -13,9 +13,7 @@ namespace ExpressionTest
             if (string.IsNullOrEmpty(query))
                 return null;
 
-            // query item format may change for each ui library
-            // so we must seperate this formatter
-            List<QueryItem> filterList = JsonConvert.DeserializeObject<List<QueryItem>>(query).Where(x => x.Active).ToList();
+            List<QueryItem> filterList = new JsonQueryFormatter().Compile(query); 
             Expression<Func<T, bool>> predicate = null;
 
             foreach (var filter in filterList)
