@@ -96,11 +96,15 @@ namespace ExpressionTest
             return returnExp;
         }
 
-        private static Expression<Func<T, bool>> Contains<T>(ParameterExpression paramExp, Expression left, Expression right)
+        private Expression<Func<T, bool>> Contains<T>(ParameterExpression paramExp, Expression left, Expression right)
         {
+            var stringComparisonParameter = 
+                Expression.Constant(StringComparison.OrdinalIgnoreCase, typeof(StringComparison));
+
             Expression<Func<T, bool>> returnExp;
-            MethodInfo method = typeof(string).GetMethod("Contains", new[] { typeof(string) });
-            MethodCallExpression expMethod = Expression.Call(left, method, right);
+            MethodInfo method = typeof(string).GetMethod("Contains", new[] { typeof(string), typeof(StringComparison) });
+            
+            MethodCallExpression expMethod = Expression.Call(left, method, new Expression[] { right, stringComparisonParameter });
             returnExp = Expression.Lambda<Func<T, bool>>(expMethod, paramExp);
             return returnExp;
         }

@@ -2,7 +2,7 @@
   {
     "Member": "Name",
     "Operator": "contains",
-    "Value": "S",
+    "Value": "s",
     "LogicalOperator": "or",
     "Active": true
   },
