@@ -15,7 +15,7 @@ namespace ExpressionTest
 
             // query item format may change for each ui library
             // so we must seperate this formatter
-            List<QueryItem> filterList = JsonConvert.DeserializeObject<List<QueryItem>>(query);
+            List<QueryItem> filterList = JsonConvert.DeserializeObject<List<QueryItem>>(query).Where(x => x.Active).ToList();
             Expression<Func<T, bool>> predicate = null;
 
             foreach (var filter in filterList)
@@ -43,14 +43,16 @@ namespace ExpressionTest
                     left = Expression.Property((field == fieldPath[0]) ? paramExp : left, field);
                 }
 
+                right = Expression.Convert(PredicateBuilderExtensions.ToExprConstant(property, filter.Value), property.PropertyType);
+
                 Expression<Func<T, bool>> newresult = filter.Operator switch
                 {
-                    var x when x == "contains" => Contains<T>(paramExp, left, right),
+                    var x when x == "contains" => returnExp = Contains<T>(paramExp, left, right),
                     "startswith" => returnExp = StartsWith<T>(paramExp, left, right),
-                    "notcontains" => NotContains<T>(paramExp, left, right),
-                    "notstartwith" => NotStartsWith<T>(paramExp, left, right),
+                    "notcontains" => returnExp = NotContains<T>(paramExp, left, right),
+                    "notstartwith" => returnExp = NotStartsWith<T>(paramExp, left, right),
                     // todo: type control for system.datetime or nullable types
-                    "equal"=> Expression.Lambda<Func<T, bool>>(Expression.Equal(left, right), paramExp),
+                    "equal" => returnExp = Expression.Lambda<Func<T, bool>>(Expression.Equal(left, right), paramExp),
                 };
 
                 if (string.IsNullOrEmpty(filter.LogicalOperator) || filter.LogicalOperator.ToLower() == "and")
@@ -64,10 +66,10 @@ namespace ExpressionTest
 
             }
 
-            return null;
+            return predicate;
         }
 
-        private static Expression<Func<T, bool>> NotStartsWith<T>(ParameterExpression paramExp, Expression left, Expression right)
+        private Expression<Func<T, bool>> NotStartsWith<T>(ParameterExpression paramExp, Expression left, Expression right)
         {
             Expression<Func<T, bool>> returnExp;
             MethodInfo method = typeof(string).GetMethod("StartsWith", new[] { typeof(string) });
@@ -77,7 +79,7 @@ namespace ExpressionTest
             return returnExp;
         }
 
-        private static Expression<Func<T, bool>> NotContains<T>(ParameterExpression paramExp, Expression left, Expression right)
+        private Expression<Func<T, bool>> NotContains<T>(ParameterExpression paramExp, Expression left, Expression right)
         {
             Expression<Func<T, bool>> returnExp;
             MethodInfo method = typeof(string).GetMethod("Contains", new[] { typeof(string) });
@@ -87,7 +89,7 @@ namespace ExpressionTest
             return returnExp;
         }
 
-        private static Expression<Func<T, bool>> StartsWith<T>(ParameterExpression paramExp, Expression left, Expression right)
+        private Expression<Func<T, bool>> StartsWith<T>(ParameterExpression paramExp, Expression left, Expression right)
         {
             Expression<Func<T, bool>> returnExp;
             MethodInfo method = typeof(string).GetMethod("StartsWith", new[] { typeof(string) });

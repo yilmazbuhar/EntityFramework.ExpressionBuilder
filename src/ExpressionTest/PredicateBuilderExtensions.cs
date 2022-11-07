@@ -1,4 +1,6 @@
-﻿using System.Linq.Expressions;
+﻿using System.Globalization;
+using System.Linq.Expressions;
+using System.Reflection;
 
 namespace ExpressionTest
 {
@@ -52,6 +54,48 @@ namespace ExpressionTest
                 if (node == _oldValue)
                     return _newValue;
                 return base.Visit(node);
+            }
+        }
+
+        public static Expression ToExprConstant(PropertyInfo prop, string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return Expression.Constant(null);
+            else
+            {
+                var fullName = prop.PropertyType.FullName;
+                if (prop.PropertyType.FullName.Contains("System.DateTime") && prop.PropertyType.FullName.Contains("System.Nullable"))
+                    fullName = "System.DateTime";
+                else if (prop.PropertyType.FullName.Contains("System.Guid") && prop.PropertyType.FullName.Contains("System.Nullable"))
+                    fullName = "System.Guid";
+                else if (
+                    (!prop.PropertyType.IsGenericType && prop.PropertyType.IsEnum)
+                    || (prop.PropertyType.IsGenericType && Nullable.GetUnderlyingType(prop.PropertyType).BaseType == typeof(Enum))
+                    )
+                    fullName = "System.Enum";
+
+
+                object val;
+                switch (fullName)
+                {
+                    case "System.Guid":
+                        val = Guid.Parse(value);
+                        break;
+                    case "System.DateTime":
+                        if (DateTime.TryParseExact(value, "dd.MM.yyyy HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out var result))
+                            val = result;
+                        else
+                            val = DateTime.ParseExact(value, "dd.MM.yyyy", CultureInfo.InvariantCulture);
+                        break;
+                    case "System.Enum":
+                        val = Int32.Parse(value);
+                        break;
+                    default:
+                        Type t = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
+                        val = Convert.ChangeType(value, Type.GetType(t.FullName));
+                        break;
+                }
+                return Expression.Constant(val);
             }
         }
     }

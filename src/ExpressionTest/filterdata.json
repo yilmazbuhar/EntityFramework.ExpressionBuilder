@@ -1,22 +1,23 @@
 [
   {
-    "Key": "Name",
-    "Alias": "Müşteri Adı",
+    "Member": "Name",
     "Operator": "contains",
-    "Value": "Yılmaz",
-    "LogicalOperator": "or"
+    "Value": "s",
+    "LogicalOperator": "or",
+    "Active": true
   },
   {
-    "Key": "Surname",
-    "Alias": "Soyadı",
+    "Member": "Surname",
     "Operator": "equal",
-    "Value": "Buhar",
-    "LogicalOperator": "or"
+    "Value": "Riley",
+    "LogicalOperator": "or",
+    "Active": true
   },
   {
-    "Key": "Company.Title",
+    "Member": "Company.Title",
     "Operator": "equal",
     "Value": "Test",
-    "LogicalOperator": "or"
+    "LogicalOperator": "or",
+    "Active": false
   }
 ]
