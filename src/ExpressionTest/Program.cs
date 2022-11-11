@@ -1,33 +1,6 @@
 ﻿// See https://aka.ms/new-console-template for more information
 using ExpressionTest;
 using System.Linq.Expressions;
-using System.Reflection;
-
-//var lambda = GetExpression<Foo>("Bar", "s");
-////Foo foo = new Foo { Bar = "aabca" };
-////bool test = lambda.Compile()(foo);
-
-//List<Foo> foolist = new List<Foo> {
-//    new (){ Bar = "John" },
-//    new (){ Bar = "Soap" },
-//    new (){ Bar = "Simon" },
-//    new (){ Bar = "Kyle" },
-//    new (){ Bar = "Roach" }
-//};
-
-//var filtered = foolist.Where(lambda.Compile());
-
-//static Expression<Func<T, bool>> GetExpression<T>(string propertyName, string propertyValue)
-//{
-//    var parameterExp = Expression.Parameter(typeof(T), "type");
-//    var propertyExp = Expression.Property(parameterExp, propertyName);
-//    MethodInfo method = typeof(string).GetMethod("Contains", new[] { typeof(string), typeof(StringComparison) });
-//    var someValue = Expression.Constant(propertyValue, typeof(string));
-//    var someValue2 = Expression.Constant(StringComparison.OrdinalIgnoreCase, typeof(StringComparison));
-//    var containsMethodExp = Expression.Call(propertyExp, method, new Expression[] { someValue, someValue2 });
-
-//    return Expression.Lambda<Func<T, bool>>(containsMethodExp, parameterExp);
-//}
 
 using CustomerDbContext customerdb = new CustomerDbContext();
 
@@ -56,10 +29,4 @@ foreach (var item in filteredcustomers)
     Console.WriteLine(item.ToString());
 }
 
-
 Console.Read();
-
-class Foo
-{
-    public string Bar { get; set; }
-}
