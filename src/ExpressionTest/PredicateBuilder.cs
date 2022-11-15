@@ -1,11 +1,25 @@
-﻿using System.Globalization;
+﻿using Microsoft.Extensions.Options;
+using System.Globalization;
 using System.Linq.Expressions;
 using System.Reflection;
 
 namespace ExpressionTest
 {
-    public class PredicateBuilder
+    public interface ILambdaBuilder
     {
+        Expression<Func<T, bool>> CreateLambda<T>(string query, bool roundDecimal = false);
+    }
+
+    public class LambdaBuilder : ILambdaBuilder
+    {
+        private readonly IQueryFormatter _formatter;
+        private readonly LambdaBuilderSettings _settings;
+
+        public LambdaBuilder(IEnumerable<IQueryFormatter> formatters, IOptions<LambdaBuilderSettings> settings)
+        {
+            _formatter = formatters.First(f => f.Name == settings.Value.Formatter);
+        }
+
         /// <summary>
         /// Set constant for given <see cref="PropertyInfo"/>
         /// </summary>
@@ -54,14 +68,13 @@ namespace ExpressionTest
             }
         }
 
-        public Expression<Func<T, bool>> GenerateFilterPredicate<T>(string query, bool roundDecimal = false)
+        public Expression<Func<T, bool>> CreateLambda<T>(string query, bool roundDecimal = false)
         {
             if (string.IsNullOrEmpty(query))
                 return null;
 
-            List<QueryItem> filterList = new JsonQueryFormatter().Compile(query);
+            List<QueryItem> filterList = _formatter.Compile(query);
             Expression<Func<T, bool>> predicate = null;
-            //ParameterExpression paramExp = Expression.Parameter(typeof(T));
 
             var parameterExpression = Expression.Parameter(typeof(T), nameof(T));
             foreach (var filter in filterList)
@@ -97,6 +110,14 @@ namespace ExpressionTest
             return predicate;
         }
 
+        /// <summary>
+        /// Contains with OrdinalIgnoreCase
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="paramExp"></param>
+        /// <param name="left"></param>
+        /// <param name="right"></param>
+        /// <returns></returns>
         private Expression<Func<T, bool>> Contains<T>(ParameterExpression paramExp, Expression left, Expression right)
         {
             var stringComparisonParameter =
@@ -202,33 +223,36 @@ namespace ExpressionTest
 
             return Expression.Lambda<Func<T, bool>>(Expression.LessThan(left, right));
         }
-
-        //public static IQueryable<T> Where<T>(this IQueryable<T> query, string selector, string comparer, string value)
-        //{
-        //    var target = Expression.Parameter(typeof(T));
-
-        //    return query.Provider.CreateQuery<T>(CreateWhereClause(target, query.Expression, selector, comparer, value));
-        //}
-
-        //static Expression CreateWhereClause(ParameterExpression target, Expression expression, string selector, string comparer, string value)
-        //{
-        //    var predicate = Expression.Lambda(CreateComparison(target, selector, comparer, value), target);
-
-        //    return Expression.Call(typeof(Queryable), nameof(Queryable.Where), new[] { target.Type },
-        //        expression, Expression.Quote(predicate));
-        //}
-
-        //static Expression CreateComparison(ParameterExpression target, string selector, string comparer, string value)
-        //{
-        //    var memberAccess = CreateMemberAccess(target, selector);
-        //    var actualValue = Expression.Constant(value, typeof(string));
-
-        //    return Expression.Call(memberAccess, comparer, null, actualValue);
-        //}
-
-        //static Expression CreateMemberAccess(Expression target, string selector)
-        //{
-        //    return selector.Split('.').Aggregate(target, (t, n) => Expression.PropertyOrField(t, n));
-        //}
     }
 }
+
+//public static class ExtensionMethods
+//{
+//    public static IQueryable<T> Where<T>(this IQueryable<T> query, string selector, string comparer, string value)
+//    {
+//        var target = Expression.Parameter(typeof(T));
+
+//        return query.Provider.CreateQuery<T>(CreateWhereClause(target, query.Expression, selector, comparer, value));
+//    }
+
+//    static Expression CreateWhereClause(ParameterExpression target, Expression expression, string selector, string comparer, string value)
+//    {
+//        var predicate = Expression.Lambda(CreateComparison(target, selector, comparer, value), target);
+
+//        return Expression.Call(typeof(Queryable), nameof(Queryable.Where), new[] { target.Type },
+//            expression, Expression.Quote(predicate));
+//    }
+
+//    static Expression CreateComparison(ParameterExpression target, string selector, string comparer, string value)
+//    {
+//        var memberAccess = CreateMemberAccess(target, selector);
+//        var actualValue = Expression.Constant(value, typeof(string));
+
+//        return Expression.Call(memberAccess, comparer, null, actualValue);
+//    }
+
+//    static Expression CreateMemberAccess(Expression target, string selector)
+//    {
+//        return selector.Split('.').Aggregate(target, (t, n) => Expression.PropertyOrField(t, n));
+//    }
+//}

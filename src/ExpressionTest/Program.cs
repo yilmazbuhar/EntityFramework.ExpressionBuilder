@@ -18,8 +18,8 @@ var result = await customerdb.SaveChangesAsync();
 
 var jsonFilter = File.ReadAllText("filterdata.json");
 
-PredicateBuilder predicateBuilder = new PredicateBuilder();
-Expression<Func<Person, bool>> predicate = predicateBuilder.GenerateFilterPredicate<Person>(jsonFilter);
+LambdaBuilder predicateBuilder = new PredicateBuilder();
+Expression<Func<Person, bool>> predicate = predicateBuilder.CreateLambda<Person>(jsonFilter);
 
 var filteredcustomers = customerdb.Customer.Where(predicate).ToList();
 Console.WriteLine($"Filter for {jsonFilter}");
