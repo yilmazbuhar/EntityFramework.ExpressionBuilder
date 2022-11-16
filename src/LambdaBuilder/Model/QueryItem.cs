@@ -1,4 +1,5 @@
-﻿// See https://aka.ms/new-console-template for more information
+﻿namespace LambdaBuilder;
+
 public class QueryItem
 {
     public string Member { get; set; }

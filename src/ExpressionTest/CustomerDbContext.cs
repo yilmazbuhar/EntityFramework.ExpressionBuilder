@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
-namespace ExpressionTest
+namespace LambdaBuilder
 {
     public class CustomerDbContext : DbContext
     {

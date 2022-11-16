@@ -1,9 +1,25 @@
-﻿// See https://aka.ms/new-console-template for more information
-using ExpressionTest;
+﻿using LambdaBuilder;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using System.Linq.Expressions;
 
-using CustomerDbContext customerdb = new CustomerDbContext();
+IConfiguration configuration = new ConfigurationBuilder()
+    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+    .Build();
 
+var serviceProvider = new ServiceCollection()
+    .AddSingleton<IPredicateLambdaBuilder, PredicateLambdaBuilder>()
+    //.AddDbContext<CustomerDbContext>(optionsAction => { 
+    //    optionsAction.use
+    //})
+    .AddOptions()
+    .Configure<LambdaBuilderSettings>(configuration.GetSection("LambdaBuilderSettings"))
+    .BuildServiceProvider();
+
+using CustomerDbContext customerdb = new CustomerDbContext();
+var _predicateLambdaBuilder = serviceProvider.GetRequiredService<PredicateLambdaBuilder>();
+
+// Save master data -------------------------------------------------------
 var teamid = Guid.NewGuid();
 await customerdb.Team.AddAsync(new() { Title = "GhostTeam", Id = teamid });
 await customerdb.SaveChangesAsync();
@@ -16,12 +32,16 @@ await customerdb.Customer.AddAsync(new() { Name = "Roach", Surname = "Sanderson"
 
 var result = await customerdb.SaveChangesAsync();
 
+// Generate mock request --------------------------------------------------
 var jsonFilter = File.ReadAllText("filterdata.json");
 
-LambdaBuilder predicateBuilder = new PredicateBuilder();
-Expression<Func<Person, bool>> predicate = predicateBuilder.CreateLambda<Person>(jsonFilter);
+// Generate condition -----------------------------------------------------
+Expression<Func<Person, bool>> predicate = await _predicateLambdaBuilder.CreateLambda<Person>(jsonFilter);
 
+// Send to database -------------------------------------------------------
 var filteredcustomers = customerdb.Customer.Where(predicate).ToList();
+
+// Print result -----------------------------------------------------------
 Console.WriteLine($"Filter for {jsonFilter}");
 Console.WriteLine($"------------------------------------");
 foreach (var item in filteredcustomers)
@@ -30,3 +50,8 @@ foreach (var item in filteredcustomers)
 }
 
 Console.Read();
+
+//bool ComparePerson(Person person)
+//{
+//    return person.Id == Guid.Empty;
+//}
