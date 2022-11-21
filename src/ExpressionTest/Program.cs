@@ -8,13 +8,16 @@ IConfiguration configuration = new ConfigurationBuilder()
     .Build();
 
 var serviceProvider = new ServiceCollection()
-    .AddSingleton<IPredicateLambdaBuilder, PredicateLambdaBuilder>()
+    //.AddSingleton<IPredicateLambdaBuilder, PredicateLambdaBuilder>()
     //.AddDbContext<CustomerDbContext>(optionsAction => { 
     //    optionsAction.use
     //})
+    .AddLambdaBuilder(configuration)
     .AddOptions()
     .Configure<LambdaBuilderSettings>(configuration.GetSection("LambdaBuilderSettings"))
     .BuildServiceProvider();
+
+
 
 using CustomerDbContext customerdb = new CustomerDbContext();
 var _predicateLambdaBuilder = serviceProvider.GetRequiredService<PredicateLambdaBuilder>();
@@ -39,7 +42,7 @@ var jsonFilter = File.ReadAllText("filterdata.json");
 Expression<Func<Person, bool>> predicate = await _predicateLambdaBuilder.CreateLambda<Person>(jsonFilter);
 
 // Send to database -------------------------------------------------------
-var filteredcustomers = customerdb.Customer.Where(predicate).ToList();
+var filteredcustomers = customerdb.Customer.Where(predicate).OrderBy(x => x.Id).ThenBy(x => x.TeamId).ToList();
 
 // Print result -----------------------------------------------------------
 Console.WriteLine($"Filter for {jsonFilter}");

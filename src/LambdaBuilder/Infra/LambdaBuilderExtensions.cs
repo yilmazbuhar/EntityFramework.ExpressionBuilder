@@ -5,7 +5,7 @@ namespace LambdaBuilder
 {
     public static class LambdaBuilderExtensions
     {
-        public static IServiceCollection AddServices(this IServiceCollection services, IConfiguration configuration)
+        public static IServiceCollection AddLambdaBuilder(this IServiceCollection services, IConfiguration configuration)
         {
             services
                 .AddSingleton<IPredicateLambdaBuilder, PredicateLambdaBuilder>()

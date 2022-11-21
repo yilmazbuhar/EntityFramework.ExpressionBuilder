@@ -1,81 +1,61 @@
 ﻿using Microsoft.Extensions.Options;
+using System.ComponentModel;
 using System.Globalization;
 using System.Linq.Expressions;
 using System.Reflection;
 
 namespace LambdaBuilder
 {
+    public enum SortDirection : short
+    {
+        ASC = 1,
+        DESC = 2
+    }
+
+    public static class SearchExtension
+    {
+        public static IQueryable<TEntity> Where<TEntity>(this IQueryable<TEntity> source, string query) where TEntity : class
+        {
+            
+        }
+    }
+
     public static class SortExtensions
     {
-        public static IQueryable<TEntity> OrderBy<TEntity>(this IQueryable<TEntity> source, string orderByStrValues) where TEntity : class
+        public static IQueryable<TEntity> OrderBy<TEntity>(this IQueryable<TEntity> source, string field, SortDirection sortDirection) where TEntity : class
         {
-            var queryExpr = source.Expression;
-            var methodAsc = "OrderBy";
-            var methodDesc = "OrderByDescending";
-
-            //var orderByValues = orderByStrValues.Trim().Split(',').Select(x => x.Trim()).ToList();
+            var orderExpression = source.Expression;
 
             var type = typeof(TEntity);
+            var parameter = Expression.Parameter(type, "orderparameter");
+
+            PropertyInfo property = SearchProperty(typeof(TEntity), field);
+            MemberExpression propertyAccess = Expression.MakeMemberAccess(parameter, property);
+
+            var orderByExpression = Expression.Lambda(propertyAccess, parameter);
+
+            
+
+            var command = sortDirection == SortDirection.ASC ? "OrderBy" : "OrderByDescending";
+            orderExpression = Expression.Call(typeof(Queryable), command, new Type[] { type, property.PropertyType }, orderExpression, Expression.Quote(orderByExpression));
+
+            return source.Provider.CreateQuery<TEntity>(orderExpression);
+        }
+
+        public static IQueryable<T> OrderBy<T>(this IQueryable<T> source, string sortProperty, ListSortDirection sortOrder)
+        {
+            var type = typeof(T);
             var parameter = Expression.Parameter(type, "p");
 
-            PropertyInfo property = SearchProperty(typeof(TEntity), orderByStrValues);
-            MemberExpression propertyAccess;
+            var property = type.GetProperty(sortProperty);
 
-            //foreach (var orderPairCommand in orderByValues)
-            //{
-            //    var command = orderPairCommand.ToUpper().EndsWith("DESC") ? methodDesc : methodAsc;
+            var propertyAccess = Expression.MakeMemberAccess(parameter, property);
+            var orderByExp = Expression.Lambda(propertyAccess, parameter);
+            var typeArguments = new Type[] { type, property.PropertyType };
+            var methodName = sortOrder == ListSortDirection.Ascending ? "OrderBy" : "OrderByDescending";
+            var resultExp = Expression.Call(typeof(Queryable), methodName, typeArguments, source.Expression, Expression.Quote(orderByExp));
 
-            //    //Get propertyname and remove optional ASC or DESC
-            //    var propertyName = orderPairCommand.Split(' ')[0].Trim();
-
-            //    var type = typeof(TEntity);
-            //    var parameter = Expression.Parameter(type, "p");
-
-            //    PropertyInfo property;
-            //    MemberExpression propertyAccess;
-
-            //    if (propertyName.Contains('.'))
-            //    {
-            //        // support to be sorted on child fields. 
-            //        var childProperties = propertyName.Split('.');
-
-            //        property = SearchProperty(typeof(TEntity), childProperties[0]);
-            //        if (property == null)
-            //            continue;
-
-            //        propertyAccess = Expression.MakeMemberAccess(parameter, property);
-
-            //        for (int i = 1; i < childProperties.Length; i++)
-            //        {
-            //            var t = property.PropertyType;
-            //            property = SearchProperty(t, childProperties[i]);
-
-            //            if (property == null)
-            //                continue;
-
-            //            propertyAccess = Expression.MakeMemberAccess(propertyAccess, property);
-            //        }
-            //    }
-            //    else
-            //    {
-            //        property = null;
-            //        property = SearchProperty(type, propertyName);
-
-            //        if (property == null)
-            //            continue;
-
-            //        propertyAccess = Expression.MakeMemberAccess(parameter, property);
-            //    }
-
-            //    var orderByExpression = Expression.Lambda(propertyAccess, parameter);
-
-            //    queryExpr = Expression.Call(typeof(Queryable), command, new Type[] { type, property.PropertyType }, queryExpr, Expression.Quote(orderByExpression));
-
-            //    methodAsc = "ThenBy";
-            //    methodDesc = "ThenByDescending";
-            //}
-
-            return source.Provider.CreateQuery<TEntity>(queryExpr);
+            return source.Provider.CreateQuery<T>(resultExp);
         }
 
         private static PropertyInfo SearchProperty(Type type, string propertyName)
@@ -106,24 +86,24 @@ namespace LambdaBuilder
             List<QueryItem> filterList = await _formatter.Compile(query);
             Expression<Func<T, bool>> predicate = null;
 
-            var parameterExpression = Expression.Parameter(typeof(T), nameof(T));
+            var parameter = Expression.Parameter(typeof(T), nameof(T));
             foreach (var filter in filterList)
             {
                 Expression<Func<T, bool>>? returnExp = null;
 
                 PropertyInfo propertyInfo = (typeof(T).GetProperty(filter.Member));
-                var property = Expression.Property(parameterExpression, propertyInfo);
+                var property = Expression.Property(parameter, propertyInfo);
                 var constant = ToExpressionConstant(propertyInfo, filter.Value);
 
                 returnExp = filter.Operator switch
                 {
                     var method when method ==
-                    "contains" => Contains<T>(parameterExpression, property, constant),
-                    "startswith" => StartsWith<T>(parameterExpression, property, constant),
-                    "notcontains" => NotContains<T>(parameterExpression, property, constant),
-                    "notstartwith" => NotStartsWith<T>(parameterExpression, property, constant),
-                    "equal" => Expression.Lambda<Func<T, bool>>(Expression.Equal(property, constant), parameterExpression),
-                    "notequal" => Expression.Lambda<Func<T, bool>>(Expression.NotEqual(property, constant), parameterExpression),
+                    "contains" => Contains<T>(parameter, property, constant),
+                    "startswith" => StartsWith<T>(parameter, property, constant),
+                    "notcontains" => NotContains<T>(parameter, property, constant),
+                    "notstartwith" => NotStartsWith<T>(parameter, property, constant),
+                    "equal" => Expression.Lambda<Func<T, bool>>(Expression.Equal(property, constant), parameter),
+                    "notequal" => Expression.Lambda<Func<T, bool>>(Expression.NotEqual(property, constant), parameter),
                     "" => null
                 };
 
