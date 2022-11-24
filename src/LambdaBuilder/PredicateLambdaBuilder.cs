@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Options;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Globalization;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -82,6 +81,73 @@ namespace LambdaBuilder
         public PredicateLambdaBuilder(IQueryFormatter formatter)
         {
             _formatter = formatter;
+        }
+
+
+        public async Task<Expression<Func<TEntity, object>>> GenerateSortLambda<TEntity>(string fieldname)
+        {
+            //IQueryable<TEntity> entities = null;
+            #region Working Model 1
+            //var type=typeof(TEntity);
+            //var param = Expression.Parameter(type);
+            //var body = Expression.Property(param, fieldname);
+
+            //return Expression.Lambda<Func<TEntity, object>>(body, param);
+            #endregion
+
+            var param = Expression.Parameter(typeof(TEntity), string.Empty);
+
+            //normally one would use Expression.Property(param, sortField), but that doesnt work
+            //when working with interfaces where the sortField is defined on a base interface.
+            //so instead we search for the Property through our own GetProperty method and use it to build the 
+            //Expression property
+            PropertyInfo propertyInfo = GetProperty(typeof(TEntity), fieldname);
+            var property = Expression.Property(param, propertyInfo);
+
+            return Expression.Lambda<Func<TEntity, object>>(Expression.Convert(property, typeof(object)), param);
+
+
+            #region Working Model 2
+            //var type = typeof(TEntity);
+            //var parameter = Expression.Parameter(type, "p");
+            //var property = type.GetProperty(fieldname);
+            //var propertyAccess = Expression.MakeMemberAccess(parameter, property);
+            //return Expression.Lambda<Func<TEntity, object>>(propertyAccess, parameter); 
+            #endregion
+            //var resultExpression = Expression.Call(typeof(Queryable), command, new Type[] { type, property.PropertyType }, source.Expression, Expression.Quote(orderByExpression));
+            //return source.Provider.CreateQuery<TEntity>(resultExpression);
+
+            //return entities.Provider.CreateQuery<TEntity>(resultExpression);
+        }
+
+        private static PropertyInfo GetProperty(Type type, string propertyName)
+        {
+            string typeName = string.Empty;
+            if (propertyName.Contains("."))
+            {
+                //name was specified with typename - so pull out the typename
+                typeName = propertyName.Substring(0, propertyName.IndexOf("."));
+                propertyName = propertyName.Substring(propertyName.IndexOf(".") + 1);
+            }
+
+            PropertyInfo prop = type.GetProperty(propertyName, BindingFlags.IgnoreCase | BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public);
+            if (prop == null)
+            {
+                var baseTypesAndInterfaces = new List<Type>();
+                if (type.BaseType != null) baseTypesAndInterfaces.Add(type.BaseType);
+                baseTypesAndInterfaces.AddRange(type.GetInterfaces());
+                foreach (Type t in baseTypesAndInterfaces)
+                {
+                    prop = GetProperty(t, propertyName);
+                    if (prop != null)
+                    {
+                        if (!string.IsNullOrEmpty(typeName) && t.Name != typeName)
+                            continue; //keep looking as the typename was not found
+                        break;
+                    }
+                }
+            }
+            return prop;
         }
 
         public async Task<Expression<Func<T, bool>>> GenerateConditionLambda<T>(string query, bool roundDecimal = false)
@@ -275,11 +341,11 @@ namespace LambdaBuilder
         /// <param name="paramExp"></param>
         /// <param name="left">Parameter</param>
         /// <param name="right">Value</param>
-        /// <param name="gtoe">Pass true for greater than or equal</param>
+        /// <param name="ltoe">Pass true for lass than or equal</param>
         /// <returns></returns>
-        private Expression<Func<T, bool>> LessThan<T>(ParameterExpression paramExp, Expression left, Expression right, bool gtoe)
+        private Expression<Func<T, bool>> LessThan<T>(ParameterExpression paramExp, Expression left, Expression right, bool ltoe)
         {
-            if (gtoe)
+            if (ltoe)
                 return Expression.Lambda<Func<T, bool>>(Expression.LessThanOrEqual(left, right));
 
             return Expression.Lambda<Func<T, bool>>(Expression.LessThan(left, right));

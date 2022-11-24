@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.3.32929.385
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ExpressionTest", "ExpressionTest.csproj", "{F355A711-7428-4C4C-951A-59C167FB4856}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LambdaBuilder.Tests", "LambdaBuilder.Tests.csproj", "{F355A711-7428-4C4C-951A-59C167FB4856}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LambdaBuilder", "..\LambdaBuilder\LambdaBuilder.csproj", "{E48F1CB1-C38A-4965-AE23-91AB2F09311E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LambdaBuilder", "..\LambdaBuilder\LambdaBuilder.csproj", "{E48F1CB1-C38A-4965-AE23-91AB2F09311E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
