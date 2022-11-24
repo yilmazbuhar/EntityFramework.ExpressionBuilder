@@ -1,23 +1,39 @@
-[
-  {
-    "Member": "Name",
-    "Operator": "contains",
-    "Value": "s",
-    "LogicalOperator": "or",
-    "Active": true
+{
+  "Where": [
+    {
+      "Member": "Name",
+      "Operator": "contains",
+      "Value": "s",
+      "LogicalOperator": "or",
+      "Active": true
+    },
+    {
+      "Member": "Surname",
+      "Operator": "equal",
+      "Value": "Riley",
+      "LogicalOperator": "or",
+      "Active": false
+    },
+    {
+      "Member": "Company.Title",
+      "Operator": "equal",
+      "Value": "Test",
+      "LogicalOperator": "or",
+      "Active": false
+    }
+  ],
+  "Paging": {
+    "Take": 0,
+    "Skip": 0
   },
-  {
-    "Member": "Surname",
-    "Operator": "equal",
-    "Value": "Riley",
-    "LogicalOperator": "or",
-    "Active": false
-  },
-  {
-    "Member": "Company.Title",
-    "Operator": "equal",
-    "Value": "Test",
-    "LogicalOperator": "or",
-    "Active": false
-  }
-]
+  "Sort": [
+    {
+      "Field": "Name",
+      "Direction": "asc"
+    },
+    {
+      "Field": "Surname",
+      "Direction": "DESC"
+    }
+  ]
+}

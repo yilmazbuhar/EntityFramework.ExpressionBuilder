@@ -4,7 +4,7 @@ namespace LambdaBuilder
 {
     public interface IPredicateLambdaBuilder
     {
-        Task<Expression<Func<T, bool>>> CreateLambda<T>(string query, bool roundDecimal = false);
+        Task<Expression<Func<T, bool>>> GenerateConditionLambda<T>(string query, bool roundDecimal = false);
     }
 }
 

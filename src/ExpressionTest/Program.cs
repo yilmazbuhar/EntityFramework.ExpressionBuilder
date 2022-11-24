@@ -39,10 +39,10 @@ var result = await customerdb.SaveChangesAsync();
 var jsonFilter = File.ReadAllText("filterdata.json");
 
 // Generate condition -----------------------------------------------------
-Expression<Func<Person, bool>> predicate = await _predicateLambdaBuilder.CreateLambda<Person>(jsonFilter);
+Expression<Func<Person, bool>> predicate = await _predicateLambdaBuilder.GenerateConditionLambda<Person>(jsonFilter);
 
 // Send to database -------------------------------------------------------
-var filteredcustomers = customerdb.Customer.Where(predicate).OrderBy(x => x.Id).ThenBy(x => x.TeamId).ToList();
+var filteredcustomers = customerdb.Customer; //.Where(predicate).OrderBy(x => x.Id).ThenBy(x => x.TeamId).ToList();
 
 // Print result -----------------------------------------------------------
 Console.WriteLine($"Filter for {jsonFilter}");

@@ -14,9 +14,17 @@ namespace LambdaBuilder
 
     public static class SearchExtension
     {
-        public static IQueryable<TEntity> Where<TEntity>(this IQueryable<TEntity> source, string query) where TEntity : class
+        public static async Task<IQueryable<TEntity>> ApplyQuery<TEntity>(this IQueryable<TEntity> source, string query, IQueryFormatter queryFormatter) where TEntity : class
         {
-            
+            if (queryFormatter == null)
+                queryFormatter = new JsonQueryFormatter();
+
+            var predicateBuilder = new PredicateLambdaBuilder(queryFormatter);
+            var lambda = await predicateBuilder.GenerateConditionLambda<TEntity>(query);
+
+            source = source.Where(lambda);
+
+            return source;
         }
     }
 
@@ -33,8 +41,6 @@ namespace LambdaBuilder
             MemberExpression propertyAccess = Expression.MakeMemberAccess(parameter, property);
 
             var orderByExpression = Expression.Lambda(propertyAccess, parameter);
-
-            
 
             var command = sortDirection == SortDirection.ASC ? "OrderBy" : "OrderByDescending";
             orderExpression = Expression.Call(typeof(Queryable), command, new Type[] { type, property.PropertyType }, orderExpression, Expression.Quote(orderByExpression));
@@ -73,12 +79,12 @@ namespace LambdaBuilder
         private readonly IQueryFormatter _formatter;
         private readonly LambdaBuilderSettings _settings;
 
-        public PredicateLambdaBuilder(IEnumerable<IQueryFormatter> formatters, IOptions<LambdaBuilderSettings> settings)
+        public PredicateLambdaBuilder(IQueryFormatter formatter)
         {
-            _formatter = formatters.First(f => f.Name == settings.Value.Formatter);
+            _formatter = formatter;
         }
 
-        public async Task<Expression<Func<T, bool>>> CreateLambda<T>(string query, bool roundDecimal = false)
+        public async Task<Expression<Func<T, bool>>> GenerateConditionLambda<T>(string query, bool roundDecimal = false)
         {
             if (string.IsNullOrEmpty(query))
                 return null;

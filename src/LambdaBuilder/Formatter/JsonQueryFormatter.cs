@@ -9,12 +9,13 @@ public class JsonQueryFormatter : IQueryFormatter
 
     public async Task<List<QueryItem>> Compile(string query)
     {
-        var queryItems = await JsonSerializer.DeserializeAsync<List<QueryItem>>(new MemoryStream(Encoding.UTF8.GetBytes(query)));
+        var queryItems = await JsonSerializer.DeserializeAsync<Condition>(new MemoryStream(Encoding.UTF8.GetBytes(query)));
 
         // todo: It may doesn't right decision
         ArgumentNullException.ThrowIfNull(queryItems, "queryitems");
 
         return queryItems
+            .Where
             .Where(x => x.Active)
             .ToList();
     }
