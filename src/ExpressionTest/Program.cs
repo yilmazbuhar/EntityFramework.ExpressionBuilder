@@ -8,16 +8,10 @@ IConfiguration configuration = new ConfigurationBuilder()
     .Build();
 
 var serviceProvider = new ServiceCollection()
-    //.AddSingleton<IPredicateLambdaBuilder, PredicateLambdaBuilder>()
-    //.AddDbContext<CustomerDbContext>(optionsAction => { 
-    //    optionsAction.use
-    //})
     .AddLambdaBuilder(configuration)
     .AddOptions()
     .Configure<LambdaBuilderSettings>(configuration.GetSection("LambdaBuilderSettings"))
     .BuildServiceProvider();
-
-
 
 using CustomerDbContext customerdb = new CustomerDbContext();
 //var _predicateLambdaBuilder = serviceProvider.GetRequiredService<PredicateLambdaBuilder>();
@@ -40,18 +34,22 @@ var result = await customerdb.SaveChangesAsync();
 var jsonFilter = File.ReadAllText("filterdata.json");
 
 // Generate condition -----------------------------------------------------
-Expression<Func<Person, bool>> predicate = await _predicateLambdaBuilder.GenerateConditionLambda<Person>(jsonFilter, null);
-Expression<Func<Person,object>> sortpredicate = await _predicateLambdaBuilder.GenerateSortLambda<Person>("Surname");
+//Expression<Func<Person, bool>> predicate = await _predicateLambdaBuilder.GenerateConditionLambda<Person>(jsonFilter);
+//Expression<Func<Person, object>> sortpredicate = await _predicateLambdaBuilder.GenerateSortLambda<Person>(jsonFilter);
 
 // Send to database -------------------------------------------------------
-var filteredcustomers = customerdb.Customer.Where(predicate)
-    .OrderByDescending(sortpredicate);
-    //.OrderByDescending(x=>x.Id)
-    //.OrderBy(await predicateLambdaBuilder.GenerateSortLambda<Person>("Surname"));
+var filteredcustomers = await customerdb.Customer
+    .ApplyFilterAndSort(jsonFilter, null);
 
 // Print result -----------------------------------------------------------
 Console.WriteLine($"Filter for {jsonFilter}");
-Console.WriteLine($"------------------------------------");
+
+Console.WriteLine($"\nData ------------------------------------");
+foreach (var item in customerdb.Customer)
+{
+    Console.WriteLine(item.ToString());
+}
+Console.WriteLine($"\nFiltered Data ------------------------------------");
 foreach (var item in filteredcustomers)
 {
     Console.WriteLine(item.ToString());

@@ -21,18 +21,21 @@ namespace LambdaBuilder
         /// <param name="query"></param>
         /// <param name="queryFormatter"></param>
         /// <returns></returns>
-        public static async Task<IQueryable<TEntity>> ApplyFilterAndSort<TEntity>(this IQueryable<TEntity> source, string query, IQueryFormatter queryFormatter) where TEntity : class
+        public static async Task<IQueryable<TEntity>> ApplyFilterAndSort<TEntity>(this IQueryable<TEntity> source, 
+            string query, 
+            IQueryFormatter queryFormatter) where TEntity : class
         {
             if (queryFormatter == null)
                 queryFormatter = new JsonQueryFormatter();
 
-            var predicateBuilder = new PredicateLambdaBuilder();
-            var lambda = await predicateBuilder.GenerateConditionLambda<TEntity>(query, queryFormatter);
+            var conditions = await queryFormatter.Compile(query);
 
-            var sort = await predicateBuilder.GenerateSortLambda<TEntity>("sdvsa");
+            var predicateBuilder = new PredicateLambdaBuilder();
+            var lambda = await predicateBuilder.GenerateConditionLambda<TEntity>(conditions.Where);
+            //var sort = await predicateBuilder.GenerateSortLambda<TEntity>(conditions.Sort[0]);
 
             source = source.Where(lambda);
-            source = source.OrderByDescending(sort);
+            source = source.OrderBy(conditions.Sort[0]);
 
             return source;
         }
@@ -40,19 +43,19 @@ namespace LambdaBuilder
 
     public static class SortExtensions
     {
-        public static IQueryable<TEntity> OrderBy<TEntity>(this IQueryable<TEntity> source, string field, SortDirection sortDirection) where TEntity : class
+        public static IQueryable<TEntity> OrderBy<TEntity>(this IQueryable<TEntity> source, SortItem sortItem) where TEntity : class
         {
             var orderExpression = source.Expression;
 
             var type = typeof(TEntity);
             var parameter = Expression.Parameter(type, "orderparameter");
 
-            PropertyInfo property = SearchProperty(typeof(TEntity), field);
+            PropertyInfo property = SearchProperty(typeof(TEntity), sortItem.Field);
             MemberExpression propertyAccess = Expression.MakeMemberAccess(parameter, property);
 
             var orderByExpression = Expression.Lambda(propertyAccess, parameter);
 
-            var command = sortDirection == SortDirection.ASC ? "OrderBy" : "OrderByDescending";
+            var command = sortItem.SortDirection == SortDirection.ASC ? "OrderBy" : "OrderByDescending";
             orderExpression = Expression.Call(typeof(Queryable), command, new Type[] { type, property.PropertyType }, orderExpression, Expression.Quote(orderByExpression));
 
             return source.Provider.CreateQuery<TEntity>(orderExpression);
@@ -86,8 +89,6 @@ namespace LambdaBuilder
 
     public class PredicateLambdaBuilder
     {
-        
-
         private static PropertyInfo GetProperty(Type type, string propertyName)
         {
             string typeName = string.Empty;
@@ -118,27 +119,20 @@ namespace LambdaBuilder
             return prop;
         }
 
-        public async Task<Expression<Func<T, bool>>> GenerateConditionLambda<T>(string query, IQueryFormatter _formatter)
+        public async Task<Expression<Func<T, bool>>> GenerateConditionLambda<T>(List<QueryItem> conditions)
         {
-            if (string.IsNullOrEmpty(query))
-                return null;
-
-            if (_formatter == null)
-                _formatter = new JsonQueryFormatter();
-
-            Condition filterList = await _formatter.Compile(query);
             Expression<Func<T, bool>> predicate = null;
 
             var parameter = Expression.Parameter(typeof(T), nameof(T));
-            foreach (var filter in filterList.Where)
+            foreach (var condition in conditions)
             {
                 Expression<Func<T, bool>>? returnExp = null;
 
-                PropertyInfo propertyInfo = (typeof(T).GetProperty(filter.Member));
+                PropertyInfo propertyInfo = (typeof(T).GetProperty(condition.Member));
                 var property = Expression.Property(parameter, propertyInfo);
-                var constant = ToExpressionConstant(propertyInfo, filter.Value);
+                var constant = ToExpressionConstant(propertyInfo, condition.Value);
 
-                returnExp = filter.Operator switch
+                returnExp = condition.Operator switch
                 {
                     var method when method ==
                         "contains" => Contains<T>(parameter, property, constant),
@@ -150,11 +144,11 @@ namespace LambdaBuilder
                         "" => null
                 };
 
-                if (string.IsNullOrEmpty(filter.LogicalOperator) || filter.LogicalOperator.ToLower() == "and")
+                if (string.IsNullOrEmpty(condition.LogicalOperator) || condition.LogicalOperator.ToLower() == "and")
                 {
                     predicate = predicate == null ? returnExp : returnExp.And(predicate);
                 }
-                else if (filter.LogicalOperator.ToLower() == "or")
+                else if (condition.LogicalOperator.ToLower() == "or")
                 {
                     predicate = predicate == null ? returnExp : predicate = returnExp.Or(predicate);
                 }
@@ -163,8 +157,13 @@ namespace LambdaBuilder
             return predicate;
         }
 
-        public async Task<Expression<Func<TEntity, object>>> GenerateSortLambda<TEntity>(string fieldname)
+        public async Task<Expression<Func<TEntity, object>>> GenerateSortLambda<TEntity>(SortItem sortitem)
         {
+            //if (Formatter == null)
+            //    Formatter = new JsonQueryFormatter();
+
+            //Condition filterList = await Formatter.Compile(query);
+
             //IQueryable<TEntity> entities = null;
             #region Working Model 1
             //var type=typeof(TEntity);
@@ -181,7 +180,7 @@ namespace LambdaBuilder
             //when working with interfaces where the sortField is defined on a base interface.
             //so instead we search for the Property through our own GetProperty method and use it to build the 
             //Expression property
-            PropertyInfo propertyInfo = GetProperty(typeof(TEntity), fieldname);
+            PropertyInfo propertyInfo = GetProperty(typeof(TEntity), sortitem.Field);
             var property = Expression.Property(param, propertyInfo);
 
             return Expression.Lambda<Func<TEntity, object>>(Expression.Convert(property, typeof(object)), param);

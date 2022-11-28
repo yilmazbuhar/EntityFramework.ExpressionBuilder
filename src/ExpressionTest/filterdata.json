@@ -3,7 +3,7 @@
     {
       "Member": "Name",
       "Operator": "contains",
-      "Value": "s",
+      "Value": "a",
       "LogicalOperator": "or",
       "Active": true
     },
@@ -29,7 +29,7 @@
   "Sort": [
     {
       "Field": "Name",
-      "Direction": "asc"
+      "Direction": "DESC"
     },
     {
       "Field": "Surname",
