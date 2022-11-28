@@ -13,5 +13,5 @@ public interface IQueryFormatter
     /// </summary>
     /// <param name="query"></param>
     /// <returns></returns>
-    Task<List<QueryItem>> Compile(string query);
+    Task<Condition> Compile(string query);
 }

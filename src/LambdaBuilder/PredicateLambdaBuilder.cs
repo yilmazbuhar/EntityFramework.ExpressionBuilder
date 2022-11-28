@@ -13,15 +13,26 @@ namespace LambdaBuilder
 
     public static class SearchExtension
     {
-        public static async Task<IQueryable<TEntity>> ApplyQuery<TEntity>(this IQueryable<TEntity> source, string query, IQueryFormatter queryFormatter) where TEntity : class
+        /// <summary>
+        /// Default formatter <see cref="JsonQueryFormatter"/>
+        /// </summary>
+        /// <typeparam name="TEntity"></typeparam>
+        /// <param name="source"></param>
+        /// <param name="query"></param>
+        /// <param name="queryFormatter"></param>
+        /// <returns></returns>
+        public static async Task<IQueryable<TEntity>> ApplyFilterAndSort<TEntity>(this IQueryable<TEntity> source, string query, IQueryFormatter queryFormatter) where TEntity : class
         {
             if (queryFormatter == null)
                 queryFormatter = new JsonQueryFormatter();
 
-            var predicateBuilder = new PredicateLambdaBuilder(queryFormatter);
-            var lambda = await predicateBuilder.GenerateConditionLambda<TEntity>(query);
+            var predicateBuilder = new PredicateLambdaBuilder();
+            var lambda = await predicateBuilder.GenerateConditionLambda<TEntity>(query, queryFormatter);
+
+            var sort = await predicateBuilder.GenerateSortLambda<TEntity>("sdvsa");
 
             source = source.Where(lambda);
+            source = source.OrderByDescending(sort);
 
             return source;
         }
@@ -73,52 +84,9 @@ namespace LambdaBuilder
     }
 
 
-    public class PredicateLambdaBuilder : IPredicateLambdaBuilder
+    public class PredicateLambdaBuilder
     {
-        private readonly IQueryFormatter _formatter;
-        private readonly LambdaBuilderSettings _settings;
-
-        public PredicateLambdaBuilder(IQueryFormatter formatter)
-        {
-            _formatter = formatter;
-        }
-
-
-        public async Task<Expression<Func<TEntity, object>>> GenerateSortLambda<TEntity>(string fieldname)
-        {
-            //IQueryable<TEntity> entities = null;
-            #region Working Model 1
-            //var type=typeof(TEntity);
-            //var param = Expression.Parameter(type);
-            //var body = Expression.Property(param, fieldname);
-
-            //return Expression.Lambda<Func<TEntity, object>>(body, param);
-            #endregion
-
-            var param = Expression.Parameter(typeof(TEntity), string.Empty);
-
-            //normally one would use Expression.Property(param, sortField), but that doesnt work
-            //when working with interfaces where the sortField is defined on a base interface.
-            //so instead we search for the Property through our own GetProperty method and use it to build the 
-            //Expression property
-            PropertyInfo propertyInfo = GetProperty(typeof(TEntity), fieldname);
-            var property = Expression.Property(param, propertyInfo);
-
-            return Expression.Lambda<Func<TEntity, object>>(Expression.Convert(property, typeof(object)), param);
-
-
-            #region Working Model 2
-            //var type = typeof(TEntity);
-            //var parameter = Expression.Parameter(type, "p");
-            //var property = type.GetProperty(fieldname);
-            //var propertyAccess = Expression.MakeMemberAccess(parameter, property);
-            //return Expression.Lambda<Func<TEntity, object>>(propertyAccess, parameter); 
-            #endregion
-            //var resultExpression = Expression.Call(typeof(Queryable), command, new Type[] { type, property.PropertyType }, source.Expression, Expression.Quote(orderByExpression));
-            //return source.Provider.CreateQuery<TEntity>(resultExpression);
-
-            //return entities.Provider.CreateQuery<TEntity>(resultExpression);
-        }
+        
 
         private static PropertyInfo GetProperty(Type type, string propertyName)
         {
@@ -150,16 +118,19 @@ namespace LambdaBuilder
             return prop;
         }
 
-        public async Task<Expression<Func<T, bool>>> GenerateConditionLambda<T>(string query, bool roundDecimal = false)
+        public async Task<Expression<Func<T, bool>>> GenerateConditionLambda<T>(string query, IQueryFormatter _formatter)
         {
             if (string.IsNullOrEmpty(query))
                 return null;
 
-            List<QueryItem> filterList = await _formatter.Compile(query);
+            if (_formatter == null)
+                _formatter = new JsonQueryFormatter();
+
+            Condition filterList = await _formatter.Compile(query);
             Expression<Func<T, bool>> predicate = null;
 
             var parameter = Expression.Parameter(typeof(T), nameof(T));
-            foreach (var filter in filterList)
+            foreach (var filter in filterList.Where)
             {
                 Expression<Func<T, bool>>? returnExp = null;
 
@@ -170,13 +141,13 @@ namespace LambdaBuilder
                 returnExp = filter.Operator switch
                 {
                     var method when method ==
-                    "contains" => Contains<T>(parameter, property, constant),
-                    "startswith" => StartsWith<T>(parameter, property, constant),
-                    "notcontains" => NotContains<T>(parameter, property, constant),
-                    "notstartwith" => NotStartsWith<T>(parameter, property, constant),
-                    "equal" => Expression.Lambda<Func<T, bool>>(Expression.Equal(property, constant), parameter),
-                    "notequal" => Expression.Lambda<Func<T, bool>>(Expression.NotEqual(property, constant), parameter),
-                    "" => null
+                        "contains" => Contains<T>(parameter, property, constant),
+                        "startswith" => StartsWith<T>(parameter, property, constant),
+                        "notcontains" => NotContains<T>(parameter, property, constant),
+                        "notstartwith" => NotStartsWith<T>(parameter, property, constant),
+                        "equal" => Expression.Lambda<Func<T, bool>>(Expression.Equal(property, constant), parameter),
+                        "notequal" => Expression.Lambda<Func<T, bool>>(Expression.NotEqual(property, constant), parameter),
+                        "" => null
                 };
 
                 if (string.IsNullOrEmpty(filter.LogicalOperator) || filter.LogicalOperator.ToLower() == "and")
@@ -190,6 +161,44 @@ namespace LambdaBuilder
             }
 
             return predicate;
+        }
+
+        public async Task<Expression<Func<TEntity, object>>> GenerateSortLambda<TEntity>(string fieldname)
+        {
+            //IQueryable<TEntity> entities = null;
+            #region Working Model 1
+            //var type=typeof(TEntity);
+            //var param = Expression.Parameter(type);
+            //var body = Expression.Property(param, fieldname);
+
+            //return Expression.Lambda<Func<TEntity, object>>(body, param);
+            #endregion
+
+            #region Working Model 2
+            var param = Expression.Parameter(typeof(TEntity), string.Empty);
+
+            //normally one would use Expression.Property(param, sortField), but that doesnt work
+            //when working with interfaces where the sortField is defined on a base interface.
+            //so instead we search for the Property through our own GetProperty method and use it to build the 
+            //Expression property
+            PropertyInfo propertyInfo = GetProperty(typeof(TEntity), fieldname);
+            var property = Expression.Property(param, propertyInfo);
+
+            return Expression.Lambda<Func<TEntity, object>>(Expression.Convert(property, typeof(object)), param);
+            #endregion
+
+
+            #region Working Model 3
+            //var type = typeof(TEntity);
+            //var parameter = Expression.Parameter(type, "p");
+            //var property = type.GetProperty(fieldname);
+            //var propertyAccess = Expression.MakeMemberAccess(parameter, property);
+            //return Expression.Lambda<Func<TEntity, object>>(propertyAccess, parameter); 
+            #endregion
+            //var resultExpression = Expression.Call(typeof(Queryable), command, new Type[] { type, property.PropertyType }, source.Expression, Expression.Quote(orderByExpression));
+            //return source.Provider.CreateQuery<TEntity>(resultExpression);
+
+            //return entities.Provider.CreateQuery<TEntity>(resultExpression);
         }
 
         /// <summary>
@@ -352,34 +361,3 @@ namespace LambdaBuilder
         }
     }
 }
-
-//public static class ExtensionMethods
-//{
-//    public static IQueryable<T> Where<T>(this IQueryable<T> query, string selector, string comparer, string value)
-//    {
-//        var target = Expression.Parameter(typeof(T));
-
-//        return query.Provider.CreateQuery<T>(CreateWhereClause(target, query.Expression, selector, comparer, value));
-//    }
-
-//    static Expression CreateWhereClause(ParameterExpression target, Expression expression, string selector, string comparer, string value)
-//    {
-//        var predicate = Expression.Lambda(CreateComparison(target, selector, comparer, value), target);
-
-//        return Expression.Call(typeof(Queryable), nameof(Queryable.Where), new[] { target.Type },
-//            expression, Expression.Quote(predicate));
-//    }
-
-//    static Expression CreateComparison(ParameterExpression target, string selector, string comparer, string value)
-//    {
-//        var memberAccess = CreateMemberAccess(target, selector);
-//        var actualValue = Expression.Constant(value, typeof(string));
-
-//        return Expression.Call(memberAccess, comparer, null, actualValue);
-//    }
-
-//    static Expression CreateMemberAccess(Expression target, string selector)
-//    {
-//        return selector.Split('.').Aggregate(target, (t, n) => Expression.PropertyOrField(t, n));
-//    }
-//}

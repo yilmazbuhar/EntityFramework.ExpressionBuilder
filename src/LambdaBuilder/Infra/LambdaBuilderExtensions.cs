@@ -8,7 +8,7 @@ namespace LambdaBuilder
         public static IServiceCollection AddLambdaBuilder(this IServiceCollection services, IConfiguration configuration)
         {
             services
-                .AddSingleton<IPredicateLambdaBuilder, PredicateLambdaBuilder>()
+                //.AddSingleton<IPredicateLambdaBuilder, PredicateLambdaBuilder>()
                 .AddOptions()
                 .Configure<LambdaBuilderSettings>(configuration.GetSection("LambdaBuilderSettings"));
 

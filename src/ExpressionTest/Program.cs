@@ -1,6 +1,7 @@
 ﻿using LambdaBuilder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using System.Linq.Expressions;
 
 IConfiguration configuration = new ConfigurationBuilder()
     .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
@@ -20,7 +21,7 @@ var serviceProvider = new ServiceCollection()
 
 using CustomerDbContext customerdb = new CustomerDbContext();
 //var _predicateLambdaBuilder = serviceProvider.GetRequiredService<PredicateLambdaBuilder>();
-var predicateLambdaBuilder = new PredicateLambdaBuilder(null);
+var _predicateLambdaBuilder = new PredicateLambdaBuilder();
 
 // Save master data -------------------------------------------------------
 var teamid = Guid.NewGuid();
@@ -39,12 +40,14 @@ var result = await customerdb.SaveChangesAsync();
 var jsonFilter = File.ReadAllText("filterdata.json");
 
 // Generate condition -----------------------------------------------------
-//Expression<Func<Person, bool>> predicate = await _predicateLambdaBuilder.GenerateConditionLambda<Person>(jsonFilter);
+Expression<Func<Person, bool>> predicate = await _predicateLambdaBuilder.GenerateConditionLambda<Person>(jsonFilter, null);
+Expression<Func<Person,object>> sortpredicate = await _predicateLambdaBuilder.GenerateSortLambda<Person>("Surname");
 
 // Send to database -------------------------------------------------------
-var filteredcustomers = customerdb.Customer
-    .OrderBy(await predicateLambdaBuilder
-    .GenerateSortLambda<Person>("Surname"));
+var filteredcustomers = customerdb.Customer.Where(predicate)
+    .OrderByDescending(sortpredicate);
+    //.OrderByDescending(x=>x.Id)
+    //.OrderBy(await predicateLambdaBuilder.GenerateSortLambda<Person>("Surname"));
 
 // Print result -----------------------------------------------------------
 Console.WriteLine($"Filter for {jsonFilter}");

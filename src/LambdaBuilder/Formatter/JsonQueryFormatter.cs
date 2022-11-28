@@ -7,16 +7,17 @@ public class JsonQueryFormatter : IQueryFormatter
 {
     public string Name => "jsonformatter";
 
-    public async Task<List<QueryItem>> Compile(string query)
+    public async Task<Condition> Compile(string query)
     {
-        var queryItems = await JsonSerializer.DeserializeAsync<Condition>(new MemoryStream(Encoding.UTF8.GetBytes(query)));
+        var condition = await JsonSerializer.DeserializeAsync<Condition>(new MemoryStream(Encoding.UTF8.GetBytes(query)));
 
         // todo: It may doesn't right decision
-        ArgumentNullException.ThrowIfNull(queryItems, "queryitems");
+        ArgumentNullException.ThrowIfNull(condition, "queryitems");
 
-        return queryItems
-            .Where
+        condition.Where = condition.Where
             .Where(x => x.Active)
             .ToList();
+
+        return condition;
     }
 }
