@@ -21,8 +21,8 @@ namespace LambdaBuilder
         /// <param name="query"></param>
         /// <param name="queryFormatter"></param>
         /// <returns></returns>
-        public static async Task<IQueryable<TEntity>> ApplyFilterAndSort<TEntity>(this IQueryable<TEntity> source, 
-            string query, 
+        public static async Task<IQueryable<TEntity>> ApplyFilterAndSort<TEntity>(this IQueryable<TEntity> source,
+            string query,
             IQueryFormatter queryFormatter) where TEntity : class
         {
             if (queryFormatter == null)
@@ -34,8 +34,8 @@ namespace LambdaBuilder
             var lambda = await predicateBuilder.GenerateConditionLambda<TEntity>(conditions.Where);
             //var sort = await predicateBuilder.GenerateSortLambda<TEntity>(conditions.Sort[0]);
 
-            source = source.Where(lambda);
-            source = source.OrderBy(conditions.Sort[0]);
+            source = lambda == null ? source : source.Where(lambda);
+            source = source.OrderBy(conditions.Sort);
 
             return source;
         }
@@ -43,20 +43,35 @@ namespace LambdaBuilder
 
     public static class SortExtensions
     {
-        public static IQueryable<TEntity> OrderBy<TEntity>(this IQueryable<TEntity> source, SortItem sortItem) where TEntity : class
+        public static IQueryable<TEntity> OrderBy<TEntity>(this IQueryable<TEntity> source, List<SortItem> sortitems) where TEntity : class
         {
             var orderExpression = source.Expression;
 
-            var type = typeof(TEntity);
-            var parameter = Expression.Parameter(type, "orderparameter");
+            if (!sortitems.Any())
+                return source.Provider.CreateQuery<TEntity>(orderExpression);
 
-            PropertyInfo property = SearchProperty(typeof(TEntity), sortItem.Field);
-            MemberExpression propertyAccess = Expression.MakeMemberAccess(parameter, property);
+            string command = null;
+            int i = 0;
+            foreach (var sortitem in sortitems)
+            {
+                if (i == 0) command = sortitem.SortDirection == SortDirection.ASC ? "OrderBy" : "OrderByDescending";
+                else command = sortitem.SortDirection == SortDirection.ASC ? "ThenBy" : "ThenByDescending";
 
-            var orderByExpression = Expression.Lambda(propertyAccess, parameter);
+                var type = typeof(TEntity);
+                var parameter = Expression.Parameter(type, "orderparameter");
 
-            var command = sortItem.SortDirection == SortDirection.ASC ? "OrderBy" : "OrderByDescending";
-            orderExpression = Expression.Call(typeof(Queryable), command, new Type[] { type, property.PropertyType }, orderExpression, Expression.Quote(orderByExpression));
+                PropertyInfo property = SearchProperty(typeof(TEntity), sortitem.Field);
+                MemberExpression propertyAccess = Expression.MakeMemberAccess(parameter, property);
+
+                var orderByExpression = Expression.Lambda(propertyAccess, parameter);
+
+                orderExpression = Expression.Call(typeof(Queryable),
+                    command,
+                    new Type[] { type, property.PropertyType },
+                    orderExpression, Expression.Quote(orderByExpression));
+
+                i++;
+            }
 
             return source.Provider.CreateQuery<TEntity>(orderExpression);
         }
@@ -136,12 +151,12 @@ namespace LambdaBuilder
                 {
                     var method when method ==
                         "contains" => Contains<T>(parameter, property, constant),
-                        "startswith" => StartsWith<T>(parameter, property, constant),
-                        "notcontains" => NotContains<T>(parameter, property, constant),
-                        "notstartwith" => NotStartsWith<T>(parameter, property, constant),
-                        "equal" => Expression.Lambda<Func<T, bool>>(Expression.Equal(property, constant), parameter),
-                        "notequal" => Expression.Lambda<Func<T, bool>>(Expression.NotEqual(property, constant), parameter),
-                        "" => null
+                    "startswith" => StartsWith<T>(parameter, property, constant),
+                    "notcontains" => NotContains<T>(parameter, property, constant),
+                    "notstartwith" => NotStartsWith<T>(parameter, property, constant),
+                    "equal" => Expression.Lambda<Func<T, bool>>(Expression.Equal(property, constant), parameter),
+                    "notequal" => Expression.Lambda<Func<T, bool>>(Expression.NotEqual(property, constant), parameter),
+                    "" => null
                 };
 
                 if (string.IsNullOrEmpty(condition.LogicalOperator) || condition.LogicalOperator.ToLower() == "and")

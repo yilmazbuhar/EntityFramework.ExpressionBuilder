@@ -10,4 +10,4 @@ var filteredcustomers = await customerdb.Customer
 ## Roadmap
 * Subtypes for filter
 * Subtypes for sort
-* Multiple sort field
+* ~~Multiple sort field~~

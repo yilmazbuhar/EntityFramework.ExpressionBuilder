@@ -1,7 +1,6 @@
 ﻿using LambdaBuilder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using System.Linq.Expressions;
 
 IConfiguration configuration = new ConfigurationBuilder()
     .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
@@ -33,10 +32,6 @@ var result = await customerdb.SaveChangesAsync();
 // Generate mock request --------------------------------------------------
 var jsonFilter = File.ReadAllText("filterdata.json");
 
-// Generate condition -----------------------------------------------------
-//Expression<Func<Person, bool>> predicate = await _predicateLambdaBuilder.GenerateConditionLambda<Person>(jsonFilter);
-//Expression<Func<Person, object>> sortpredicate = await _predicateLambdaBuilder.GenerateSortLambda<Person>(jsonFilter);
-
 // Send to database -------------------------------------------------------
 var filteredcustomers = await customerdb.Customer
     .ApplyFilterAndSort(jsonFilter, null);
@@ -49,6 +44,7 @@ foreach (var item in customerdb.Customer)
 {
     Console.WriteLine(item.ToString());
 }
+
 Console.WriteLine($"\nFiltered Data ------------------------------------");
 foreach (var item in filteredcustomers)
 {
@@ -56,8 +52,3 @@ foreach (var item in filteredcustomers)
 }
 
 Console.Read();
-
-//bool ComparePerson(Person person)
-//{
-//    return person.Id == Guid.Empty;
-//}
