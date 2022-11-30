@@ -3,6 +3,10 @@
 public class QueryConditions
 {
     /// <summary>
+    /// 
+    /// </summary>
+    public string LogicalOperator { get; set; } = "AND";
+    /// <summary>
     /// Determine filter parameters. To ignore filtering, pass null.
     /// </summary>
     public List<QueryItem> Where { get; set; }

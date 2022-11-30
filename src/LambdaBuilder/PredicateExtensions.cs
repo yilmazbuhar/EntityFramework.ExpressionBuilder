@@ -20,7 +20,7 @@
             var conditions = await queryFormatter.Compile(query);
 
             var predicateBuilder = new PredicateLambdaBuilder();
-            var lambda = await predicateBuilder.GenerateConditionLambda<TEntity>(conditions.Where);
+            var lambda = await predicateBuilder.GenerateConditionLambda<TEntity>(conditions.Where, conditions.LogicalOperator);
 
             source = lambda == null ? source : source.Where(lambda);
             source = conditions.Sort == null ? source : source.OrderBy(conditions.Sort);

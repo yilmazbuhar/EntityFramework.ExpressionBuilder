@@ -1,4 +1,5 @@
 {
+  "LogicalOperator": "OR",
   "Where": [
     {
       "Member": "Name",

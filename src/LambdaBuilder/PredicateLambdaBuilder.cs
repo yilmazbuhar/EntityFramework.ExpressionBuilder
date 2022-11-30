@@ -36,7 +36,7 @@ namespace LambdaBuilder
         /// <typeparam name="TEntity"></typeparam>
         /// <param name="conditions"></param>
         /// <returns></returns>
-        public async Task<Expression<Func<TEntity, bool>>> GenerateConditionLambda<TEntity>(List<QueryItem> conditions)
+        public async Task<Expression<Func<TEntity, bool>>> GenerateConditionLambda<TEntity>(List<QueryItem> conditions, string logicalOperator = "AND")
         {
             Expression<Func<TEntity, bool>> predicate = null;
             var parameter = Expression.Parameter(typeof(TEntity));
@@ -60,11 +60,11 @@ namespace LambdaBuilder
                         returnExp = instance.Invoke<TEntity>(parameter, property, constant);
                 }
 
-                if (string.IsNullOrEmpty(condition.LogicalOperator) || condition.LogicalOperator.ToLower() == "and")
+                if (string.IsNullOrEmpty(logicalOperator) || logicalOperator.ToLower() == "and")
                 {
                     predicate = predicate == null ? returnExp : returnExp.And(predicate);
                 }
-                else if (condition.LogicalOperator.ToLower() == "or")
+                else if (logicalOperator.ToLower() == "or")
                 {
                     predicate = predicate == null ? returnExp : predicate = returnExp.Or(predicate);
                 }
