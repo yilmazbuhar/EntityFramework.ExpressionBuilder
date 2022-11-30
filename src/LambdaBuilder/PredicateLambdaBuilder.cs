@@ -10,8 +10,8 @@ namespace LambdaBuilder
 
     public class PredicateLambdaBuilder
     {
-        static readonly ConcurrentDictionary<string, object> operators =
-            new ConcurrentDictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+        static readonly ConcurrentDictionary<string, IOperator> operators =
+            new ConcurrentDictionary<string, IOperator>(StringComparer.OrdinalIgnoreCase);
 
 
         /// <summary>
@@ -36,7 +36,7 @@ namespace LambdaBuilder
             return body;
         }
 
-        private object GetOperatorInstance(string key)
+        private IOperator GetOperatorInstance(string key)
         {
             var types = ReflectionHelper.GetTypeOf<IOperator>();
             foreach (var item in types)
@@ -45,7 +45,6 @@ namespace LambdaBuilder
                 if (instance.Name == key)
                 {
                     return instance;
-                    //returnExp = instance.Invoke<TEntity>(parameter, property, constant);
                 }
             }
 
@@ -72,10 +71,14 @@ namespace LambdaBuilder
                 //var constant = Expression.Constant(condition.Value, property.Type); //ToExpressionConstant(propertyInfo, condition.Value);
 
                 var property = CreateProperty<TEntity>(parameter, condition.Member);
+                // todo: Constant for decimal and datetime
                 var constant = Expression.Constant(condition.Value, property.Type);
 
                 //todo: performans tunning
-                var operatorInstance = (IOperator)operators.GetOrAdd(condition.Operator, GetOperatorInstance);
+                var operatorInstance = operators.GetOrAdd(condition.Operator, GetOperatorInstance);
+                
+                ArgumentNullException.ThrowIfNull(operatorInstance, "operatorInstance");
+                
                 returnExp = operatorInstance.Invoke<TEntity>(parameter, property, constant);
 
                 if (string.IsNullOrEmpty(logicalOperator) || logicalOperator.ToLower() == "and")
