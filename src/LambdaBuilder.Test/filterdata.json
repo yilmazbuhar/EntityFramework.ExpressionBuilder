@@ -1,11 +1,11 @@
 {
   "Where": [
     {
-      "Member": "Team.Title",
+      "Member": "Name",
       "Operator": "contains",
-      "Value": "ghost",
+      "Value": "s",
       "LogicalOperator": "or",
-      "Active": false
+      "Active": true
     },
     {
       "Member": "Surname",
@@ -15,7 +15,7 @@
       "Active": false
     },
     {
-      "Member": "Company.Title",
+      "Member": "Team.Title",
       "Operator": "equal",
       "Value": "Test",
       "LogicalOperator": "or",

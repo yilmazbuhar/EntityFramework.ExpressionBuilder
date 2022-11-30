@@ -7,7 +7,7 @@ namespace LambdaBuilder
 {
     public class PredicateLambdaBuilder
     {
-        static Expression BuildPredicate<T>(string member)
+        static Expression BuildPropertyWithSubType<T>(string member/*, string value*/)
         {
             var p = Expression.Parameter(typeof(T));
             Expression body = p;
@@ -15,23 +15,30 @@ namespace LambdaBuilder
             {
                 body = Expression.PropertyOrField(body, subMember);
             }
-            //return Expression.Lambda<Func<T, bool>>(Expression.Equal(body, Expression.Constant(value, body.Type)), p);
+
+            //var constant = Expression.Constant(value, body.Type);
+            //var method = Expression.Equal(body, constant);
+            //var ex = Expression.Lambda<Func<T, bool>>(method, p);
+
             return body;
         }
 
         public async Task<Expression<Func<T, bool>>> GenerateConditionLambda<T>(List<QueryItem> conditions)
         {
             Expression<Func<T, bool>> predicate = null;
+            var parameter = Expression.Parameter(typeof(T));
 
-            var parameter = Expression.Parameter(typeof(T), nameof(T));
             foreach (var condition in conditions)
             {
                 Expression<Func<T, bool>>? returnExp = null;
 
                 PropertyInfo propertyInfo = (typeof(T).GetProperty(condition.Member));
-                //var property = Expression.Property(parameter, propertyInfo);
-                var property = BuildPredicate<T>(condition.Member);
-                var constant = ToExpressionConstant(propertyInfo, condition.Value);
+                var property = Expression.Property(parameter, propertyInfo); //var property = Expression.PropertyOrField(parameter, condition.Member);
+                var constant = Expression.Constant(condition.Value, property.Type); //ToExpressionConstant(propertyInfo, condition.Value);
+
+                //var property = BuildPropertyWithSubType<T>(condition.Member);
+                //var constant = Expression.Constant(condition.Value, property.Type);
+
 
                 returnExp = condition.Operator switch
                 {

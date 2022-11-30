@@ -1,7 +1,9 @@
 ﻿using LambdaBuilder;
 using LambdaBuilder.Infra;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using System.Linq;
 
 IConfiguration configuration = new ConfigurationBuilder()
     .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
@@ -53,20 +55,20 @@ foreach (var item in filteredcustomers)
 }
 
 
-var team = new Team
-{
-    Title = "GhostTeam",
-    Id = teamid
-};
+//var team = new Team
+//{
+//    Title = "GhostTeam",
+//    Id = teamid
+//};
 
-var person = new Person
-{
-    Name = "John",
-    Surname = "Price",
-    TeamId = teamid,
-    Team = team
-};
+//var person = new Person
+//{
+//    Name = "John",
+//    Surname = "Price",
+//    TeamId = teamid,
+//    Team = team
+//};
 
-ReflectionHelper.GetProperty(typeof(Person), "Team.Title").GetValue(person);
+//ReflectionHelper.GetProperty(typeof(Person), "Team.Title").GetValue(person);
 
 Console.Read();
