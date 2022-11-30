@@ -17,7 +17,6 @@ namespace LambdaBuilder
         /// <returns></returns>
         public Expression CreateProperty<TEntity>(ParameterExpression parameter, string member)
         {
-            //var p = Expression.Parameter(typeof(T));
             Expression body = parameter;
             foreach (var subMember in member.Split('.'))
             {
@@ -31,6 +30,12 @@ namespace LambdaBuilder
             return body;
         }
 
+        /// <summary>
+        /// Creating lambda for given query items.
+        /// </summary>
+        /// <typeparam name="TEntity"></typeparam>
+        /// <param name="conditions"></param>
+        /// <returns></returns>
         public async Task<Expression<Func<TEntity, bool>>> GenerateConditionLambda<TEntity>(List<QueryItem> conditions)
         {
             Expression<Func<TEntity, bool>> predicate = null;
@@ -68,6 +73,12 @@ namespace LambdaBuilder
             return predicate;
         }
 
+        /// <summary>
+        /// Generate sorting lambda for given <see cref="SortItem"/>
+        /// </summary>
+        /// <typeparam name="TEntity">Base parameter type</typeparam>
+        /// <param <see cref="SortItem"/> name="sortitem">Contains direction and member</param>
+        /// <returns></returns>
         public async Task<Expression<Func<TEntity, object>>> GenerateSortLambda<TEntity>(SortItem sortitem)
         {
             //if (Formatter == null)
