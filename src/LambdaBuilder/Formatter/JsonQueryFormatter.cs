@@ -7,9 +7,9 @@ public class JsonQueryFormatter : IQueryFormatter
 {
     public string Name => "jsonformatter";
 
-    public async Task<Condition> Compile(string query)
+    public async Task<QueryConditions> Compile(string query)
     {
-        var condition = await JsonSerializer.DeserializeAsync<Condition>(new MemoryStream(Encoding.UTF8.GetBytes(query)));
+        var condition = await JsonSerializer.DeserializeAsync<QueryConditions>(new MemoryStream(Encoding.UTF8.GetBytes(query)));
 
         // todo: It may doesn't right decision
         ArgumentNullException.ThrowIfNull(condition, "queryitems");

@@ -1,14 +1,14 @@
 ﻿namespace LambdaBuilder
 {
-    public static class SearchExtension
+    public static class PredicateExtensions
     {
         /// <summary>
-        /// Default formatter <see cref="JsonQueryFormatter"/>
+        /// Applying filter, sort and paging.
         /// </summary>
-        /// <typeparam name="TEntity"></typeparam>
-        /// <param name="source"></param>
-        /// <param name="query"></param>
-        /// <param name="queryFormatter"></param>
+        /// <typeparam name="TEntity">Main <see cref="IQueryable"/>type.</typeparam>
+        /// <param name="source">Main <see cref="IQueryable"/>type.</param>
+        /// <param name="query">String query. Default format is json</param>
+        /// <param name="queryFormatter">Formatter for query string. Default formatter <see cref="JsonQueryFormatter"/></param>
         /// <returns></returns>
         public static async Task<IQueryable<TEntity>> ApplyFilterAndSort<TEntity>(this IQueryable<TEntity> source,
             string query,
@@ -21,10 +21,12 @@
 
             var predicateBuilder = new PredicateLambdaBuilder();
             var lambda = await predicateBuilder.GenerateConditionLambda<TEntity>(conditions.Where);
-            //var sort = await predicateBuilder.GenerateSortLambda<TEntity>(conditions.Sort[0]);
 
             source = lambda == null ? source : source.Where(lambda);
-            source = source.OrderBy(conditions.Sort);
+            source = conditions.Sort == null ? source : source.OrderBy(conditions.Sort);
+            source = conditions.Paging == null ? source : source
+                .Skip(conditions.Paging.PageCount * conditions.Paging.PageSize)
+                .Take(conditions.Paging.PageSize);
 
             return source;
         }

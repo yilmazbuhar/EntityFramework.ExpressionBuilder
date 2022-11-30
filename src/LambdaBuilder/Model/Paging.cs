@@ -1,6 +1,7 @@
 ﻿namespace LambdaBuilder;
 
-public class Paging {
-    public int Take { get; set; }
-    public int Skip { get; set; }
+public class Paging
+{
+    public int PageCount { get; set; }
+    public int PageSize { get; set; }
 }
