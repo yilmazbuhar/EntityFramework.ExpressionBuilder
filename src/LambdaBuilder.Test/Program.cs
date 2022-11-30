@@ -1,4 +1,5 @@
 ﻿using LambdaBuilder;
+using LambdaBuilder.Infra;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -50,5 +51,22 @@ foreach (var item in filteredcustomers)
 {
     Console.WriteLine(item.ToString());
 }
+
+
+var team = new Team
+{
+    Title = "GhostTeam",
+    Id = teamid
+};
+
+var person = new Person
+{
+    Name = "John",
+    Surname = "Price",
+    TeamId = teamid,
+    Team = team
+};
+
+ReflectionHelper.GetProperty(typeof(Person), "Team.Title").GetValue(person);
 
 Console.Read();

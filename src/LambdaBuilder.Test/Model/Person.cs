@@ -1,5 +1,4 @@
-﻿// See https://aka.ms/new-console-template for more information
-public class Person
+﻿public class Person
 {
     public Guid Id { get; set; }
     public string Name { get; set; }
@@ -9,7 +8,7 @@ public class Person
 
     public override string ToString()
     {
-        return $"{Name} {Surname} with Id {Id.ToString()}";
+        return $"{Name} {Surname} with Id {Id.ToString()} with team {Team.Title}";
     }
 
 }

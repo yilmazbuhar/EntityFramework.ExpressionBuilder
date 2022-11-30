@@ -1,9 +1,9 @@
 {
   "Where": [
     {
-      "Member": "Name",
+      "Member": "Team.Title",
       "Operator": "contains",
-      "Value": "a",
+      "Value": "ghost",
       "LogicalOperator": "or",
       "Active": false
     },
