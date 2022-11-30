@@ -1,9 +1,21 @@
-﻿using System.Reflection;
+﻿using System.Collections.Concurrent;
+using System.Reflection;
+using System.Runtime;
 
 namespace LambdaBuilder.Infra
 {
     public static class ReflectionHelper
     {
+        
+
+        public static IEnumerable<object> GetInstances<TType>()
+        {
+            foreach (var item in GetTypeOf<TType>())
+            {
+                yield return (TType)Activator.CreateInstance(item);
+            }
+        }
+
         public static IEnumerable<Type> GetTypeOf<TType>()
         {
             var sourcetype = typeof(TType);

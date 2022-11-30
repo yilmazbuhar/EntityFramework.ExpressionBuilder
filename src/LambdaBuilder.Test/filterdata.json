@@ -4,9 +4,9 @@
     {
       "Member": "Name",
       "Operator": "contains",
-      "Value": "s",
+      "Value": "S",
       "LogicalOperator": "or",
-      "Active": false
+      "Active": true
     },
     {
       "Member": "Surname",
@@ -20,12 +20,12 @@
       "Operator": "equal",
       "Value": "Test",
       "LogicalOperator": "or",
-      "Active": true
+      "Active": false
     }
   ],
   "Paging": {
-    "Take": 0,
-    "Skip": 0
+    "PageCount": 0,
+    "PageSize": 50
   },
   "Sort": [
     {

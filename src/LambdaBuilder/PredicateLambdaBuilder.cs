@@ -1,13 +1,19 @@
 ﻿using LambdaBuilder.Infra;
+using System.Collections.Concurrent;
 using System.Globalization;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Reflection.Metadata;
 
 namespace LambdaBuilder
 {
 
     public class PredicateLambdaBuilder
     {
+        static readonly ConcurrentDictionary<string, object> operators =
+            new ConcurrentDictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+
+
         /// <summary>
         /// Generic property finder. Supports subtypes
         /// </summary>
@@ -28,6 +34,22 @@ namespace LambdaBuilder
             //var ex = Expression.Lambda<Func<T, bool>>(method, p);
 
             return body;
+        }
+
+        private object GetOperatorInstance(string key)
+        {
+            var types = ReflectionHelper.GetTypeOf<IOperator>();
+            foreach (var item in types)
+            {
+                var instance = (IOperator)Activator.CreateInstance(item);
+                if (instance.Name == key)
+                {
+                    return instance;
+                    //returnExp = instance.Invoke<TEntity>(parameter, property, constant);
+                }
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -52,13 +74,9 @@ namespace LambdaBuilder
                 var property = CreateProperty<TEntity>(parameter, condition.Member);
                 var constant = Expression.Constant(condition.Value, property.Type);
 
-                var types = ReflectionHelper.GetTypeOf<IOperator>();
-                foreach (var item in types)
-                {
-                    var instance = (IOperator)Activator.CreateInstance(item);
-                    if (item.Name == condition.Operator)
-                        returnExp = instance.Invoke<TEntity>(parameter, property, constant);
-                }
+                //todo: performans tunning
+                var operatorInstance = (IOperator)operators.GetOrAdd(condition.Operator, GetOperatorInstance);
+                returnExp = operatorInstance.Invoke<TEntity>(parameter, property, constant);
 
                 if (string.IsNullOrEmpty(logicalOperator) || logicalOperator.ToLower() == "and")
                 {
