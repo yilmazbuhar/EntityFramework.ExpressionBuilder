@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace LambdaBuilder
 {
-    public static class LambdaBuilderExtensions
+    public static class StartupExtensions
     {
         public static IServiceCollection AddLambdaBuilder(this IServiceCollection services, IConfiguration configuration)
         {

@@ -5,12 +5,20 @@ using System.Reflection;
 
 namespace LambdaBuilder
 {
+
     public class PredicateLambdaBuilder
     {
-        static Expression BuildPropertyWithSubType<T>(string member/*, string value*/)
+        /// <summary>
+        /// Generic property finder. Supports subtypes
+        /// </summary>
+        /// <typeparam name="TEntity">Base type to generating lambda</typeparam>
+        /// <param name="parameter">Pass existing parameter to prevent create new parameter</param>
+        /// <param name="member"></param>
+        /// <returns></returns>
+        public Expression CreateProperty<TEntity>(ParameterExpression parameter, string member)
         {
-            var p = Expression.Parameter(typeof(T));
-            Expression body = p;
+            //var p = Expression.Parameter(typeof(T));
+            Expression body = parameter;
             foreach (var subMember in member.Split('.'))
             {
                 body = Expression.PropertyOrField(body, subMember);
@@ -23,34 +31,29 @@ namespace LambdaBuilder
             return body;
         }
 
-        public async Task<Expression<Func<T, bool>>> GenerateConditionLambda<T>(List<QueryItem> conditions)
+        public async Task<Expression<Func<TEntity, bool>>> GenerateConditionLambda<TEntity>(List<QueryItem> conditions)
         {
-            Expression<Func<T, bool>> predicate = null;
-            var parameter = Expression.Parameter(typeof(T));
+            Expression<Func<TEntity, bool>> predicate = null;
+            var parameter = Expression.Parameter(typeof(TEntity));
 
             foreach (var condition in conditions)
             {
-                Expression<Func<T, bool>>? returnExp = null;
+                Expression<Func<TEntity, bool>>? returnExp = null;
 
-                PropertyInfo propertyInfo = (typeof(T).GetProperty(condition.Member));
-                var property = Expression.Property(parameter, propertyInfo); //var property = Expression.PropertyOrField(parameter, condition.Member);
-                var constant = Expression.Constant(condition.Value, property.Type); //ToExpressionConstant(propertyInfo, condition.Value);
+                //PropertyInfo propertyInfo = (typeof(T).GetProperty(condition.Member));
+                //var property = Expression.Property(parameter, propertyInfo); //var property = Expression.PropertyOrField(parameter, condition.Member);
+                //var constant = Expression.Constant(condition.Value, property.Type); //ToExpressionConstant(propertyInfo, condition.Value);
 
-                //var property = BuildPropertyWithSubType<T>(condition.Member);
-                //var constant = Expression.Constant(condition.Value, property.Type);
+                var property = CreateProperty<TEntity>(parameter, condition.Member);
+                var constant = Expression.Constant(condition.Value, property.Type);
 
-
-                returnExp = condition.Operator switch
+                var types = ReflectionHelper.GetTypeOf<IOperator>();
+                foreach (var item in types)
                 {
-                    var method when method ==
-                    "contains" => Contains<T>(parameter, property, constant),
-                    "startswith" => StartsWith<T>(parameter, property, constant),
-                    "notcontains" => NotContains<T>(parameter, property, constant),
-                    "notstartwith" => NotStartsWith<T>(parameter, property, constant),
-                    "equal" => Expression.Lambda<Func<T, bool>>(Expression.Equal(property, constant), parameter),
-                    "notequal" => Expression.Lambda<Func<T, bool>>(Expression.NotEqual(property, constant), parameter),
-                    "" => null
-                };
+                    var instance = (IOperator)Activator.CreateInstance(item);
+                    if (item.Name == condition.Operator)
+                        returnExp = instance.Invoke<TEntity>(parameter, property, constant);
+                }
 
                 if (string.IsNullOrEmpty(condition.LogicalOperator) || condition.LogicalOperator.ToLower() == "and")
                 {
@@ -154,117 +157,6 @@ namespace LambdaBuilder
                 }
                 return Expression.Constant(val);
             }
-        }
-
-        /// <summary>
-        /// Contains with OrdinalIgnoreCase
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="parameter"></param>
-        /// <param name="property"></param>
-        /// <param name="constant"></param>
-        /// <returns></returns>
-        private Expression<Func<T, bool>> Contains<T>(ParameterExpression parameter, Expression property, Expression constant)
-        {
-            var stringComparisonParameter = Expression.Constant(StringComparison.OrdinalIgnoreCase, typeof(StringComparison));
-
-            MethodInfo method = typeof(string).GetMethod("Contains", new[] { typeof(string), typeof(StringComparison) });
-            MethodCallExpression expMethod = Expression.Call(property, method, new Expression[] { constant, stringComparisonParameter });
-
-            return Expression.Lambda<Func<T, bool>>(expMethod, parameter);
-        }
-
-        /// <summary>
-        /// Start with. This method only work with <see cref="System.String"/> type
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="paramExp"></param>
-        /// <param name="left"></param>
-        /// <param name="right"></param>
-        /// <returns></returns>
-        private Expression<Func<T, bool>> StartsWith<T>(ParameterExpression paramExp, Expression left, Expression right)
-        {
-            Expression<Func<T, bool>> returnExp;
-
-            MethodInfo method = typeof(string).GetMethod("StartsWith", new[] { typeof(string) });
-            MethodCallExpression expMethod = Expression.Call(left, method, right);
-
-            return Expression.Lambda<Func<T, bool>>(expMethod, paramExp);
-        }
-
-        /// <summary>
-        /// Not start with
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="paramExp"></param>
-        /// <param name="left"></param>
-        /// <param name="right"></param>
-        /// <returns></returns>
-        private Expression<Func<T, bool>> NotStartsWith<T>(ParameterExpression paramExp, Expression left, Expression right)
-        {
-            Expression<Func<T, bool>> returnExp;
-
-            MethodInfo method = typeof(string).GetMethod("StartsWith", new[] { typeof(string) });
-            MethodCallExpression expMethod = Expression.Call(left, method, right);
-            UnaryExpression negateExpression = Expression.Not(expMethod);
-
-            return Expression.Lambda<Func<T, bool>>(negateExpression, paramExp);
-        }
-
-        /// <summary>
-        /// Not contains with ignore case
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="paramExp"></param>
-        /// <param name="left"></param>
-        /// <param name="right"></param>
-        /// <returns></returns>
-        private Expression<Func<T, bool>> NotContains<T>(ParameterExpression paramExp, Expression left, Expression right)
-        {
-            var stringComparisonParameter =
-                Expression.Constant(StringComparison.OrdinalIgnoreCase, typeof(StringComparison));
-
-            Expression<Func<T, bool>> returnExp;
-
-            MethodInfo method = typeof(string).GetMethod("Contains", new[] { typeof(string), typeof(StringComparison) });
-            MethodCallExpression expMethod = Expression.Call(left, method, new Expression[] { right, stringComparisonParameter });
-            UnaryExpression negateExpression = Expression.Not(expMethod);
-
-            return Expression.Lambda<Func<T, bool>>(negateExpression, paramExp);
-        }
-
-        /// <summary>
-        /// Greater than or greater than or equal
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="paramExp"></param>
-        /// <param name="left">Parameter</param>
-        /// <param name="right">Value</param>
-        /// <param name="gtoe">Pass true for greater than or equal</param>
-        /// <returns></returns>
-        private Expression<Func<T, bool>> GreaterThan<T>(ParameterExpression paramExp, Expression left, Expression right, bool gtoe)
-        {
-            if (gtoe)
-                return Expression.Lambda<Func<T, bool>>(Expression.GreaterThanOrEqual(left, right));
-
-            return Expression.Lambda<Func<T, bool>>(Expression.GreaterThan(left, right));
-        }
-
-        /// <summary>
-        /// Less than or less than or equal
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="paramExp"></param>
-        /// <param name="left">Parameter</param>
-        /// <param name="right">Value</param>
-        /// <param name="ltoe">Pass true for lass than or equal</param>
-        /// <returns></returns>
-        private Expression<Func<T, bool>> LessThan<T>(ParameterExpression paramExp, Expression left, Expression right, bool ltoe)
-        {
-            if (ltoe)
-                return Expression.Lambda<Func<T, bool>>(Expression.LessThanOrEqual(left, right));
-
-            return Expression.Lambda<Func<T, bool>>(Expression.LessThan(left, right));
         }
     }
 }

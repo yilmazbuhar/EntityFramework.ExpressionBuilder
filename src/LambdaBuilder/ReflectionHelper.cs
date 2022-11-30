@@ -4,6 +4,13 @@ namespace LambdaBuilder.Infra
 {
     public static class ReflectionHelper
     {
+        public static IEnumerable<Type> GetTypeOf<TType>()
+        {
+            var sourcetype = typeof(TType);
+            return sourcetype.Assembly.GetTypes()
+                 .Where(type => sourcetype.IsAssignableFrom(type) && !type.IsAbstract && !type.IsInterface);
+        }
+
         public static PropertyInfo GetProperty(Type type, string propertyName)
         {
             string typeName = string.Empty;

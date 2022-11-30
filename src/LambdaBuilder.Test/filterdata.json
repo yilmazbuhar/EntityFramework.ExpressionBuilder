@@ -5,7 +5,7 @@
       "Operator": "contains",
       "Value": "s",
       "LogicalOperator": "or",
-      "Active": true
+      "Active": false
     },
     {
       "Member": "Surname",
@@ -19,7 +19,7 @@
       "Operator": "equal",
       "Value": "Test",
       "LogicalOperator": "or",
-      "Active": false
+      "Active": true
     }
   ],
   "Paging": {
