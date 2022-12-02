@@ -1,0 +1,21 @@
+{
+  "LogicalOperator": "OR",
+  "Where": [
+    {
+      "Member": "CustomerId",
+      "Operator": "equal",
+      "Value": "VINET",
+      "Active": true
+    }
+  ],
+  "Paging": {
+    "PageCount": 0,
+    "PageSize": 50
+  },
+  "Sort": [
+    {
+      "Field": "OrderId",
+      "Direction": "ASC"
+    }
+  ]
+}
