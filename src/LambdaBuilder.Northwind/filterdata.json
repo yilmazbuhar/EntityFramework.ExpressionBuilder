@@ -2,9 +2,9 @@
   "LogicalOperator": "OR",
   "Where": [
     {
-      "Member": "CustomerId",
-      "Operator": "equal",
-      "Value": "VINET",
+      "Member": "ShipName",
+      "Operator": "contains",
+      "Value": "toms",
       "Active": true
     }
   ],

@@ -8,15 +8,19 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 var hostBuilder = Host.CreateDefaultBuilder()
-    .ConfigureAppConfiguration(cb => {
+    .ConfigureAppConfiguration(cb =>
+    {
         cb.AddJsonFile("appsettings.json", false);
     })
-    .ConfigureServices((ctx,services) => {
-        services.AddDbContext<NorthwindContext>(optionBuilder => {
+    .ConfigureServices((ctx, services) =>
+    {
+        services.AddDbContext<NorthwindContext>(optionBuilder =>
+        {
             optionBuilder.UseSqlServer(ctx.Configuration.GetConnectionString("default"));
         });
     })
-    .ConfigureLogging(x => {
+    .ConfigureLogging(x =>
+    {
         x.ClearProviders();
     })
     .Build();
@@ -28,6 +32,7 @@ var dbContext = hostBuilder.Services.GetService<NorthwindContext>();
 var jsonFilter = File.ReadAllText("filterdata.json");
 
 // Send to database -------------------------------------------------------
+//var data1 = dbContext.Orders.Where(x => x.ShipName.Contains("toms"));
 var data = await dbContext.Orders.ApplyFilterAndSort(jsonFilter, null);
 
 foreach (var item in data)
