@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Globalization;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Reflection.Metadata;
 
 namespace LambdaBuilder
 {
@@ -15,7 +14,7 @@ namespace LambdaBuilder
 
 
         /// <summary>
-        /// Generic property finder. Supports subtypes
+        /// Generic property finder. Supports subtypes.
         /// </summary>
         /// <typeparam name="TEntity">Base type to generating lambda</typeparam>
         /// <param name="parameter">Pass existing parameter to prevent create new parameter</param>
