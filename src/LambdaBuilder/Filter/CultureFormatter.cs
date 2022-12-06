@@ -2,7 +2,7 @@
 
 namespace LambdaBuilder
 {
-    public class CultureFormatter
+    public class CultureFormatHelper
     {
         public static DateTime? ParseDateTimeStringFromCulture(string datestring, CultureInfo cultureInfo)
         {

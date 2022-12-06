@@ -6,8 +6,6 @@ namespace LambdaBuilder.Infra
 {
     public static class ReflectionHelper
     {
-        
-
         public static IEnumerable<object> GetInstances<TType>()
         {
             foreach (var item in GetTypeOf<TType>())

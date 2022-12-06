@@ -72,7 +72,7 @@ namespace LambdaBuilder
 
                 var property = CreateProperty<TEntity>(parameter, condition.Member);
                 // todo: Constant for decimal and datetime
-                var constant = ToExpressionConstant(property.Type, condition.Value, cultureInfo);// Expression.Constant(condition.Value, property.Type);
+                var constant = CreateConstantFromType(property.Type, condition.Value, cultureInfo);// Expression.Constant(condition.Value, property.Type);
 
                 //todo: performans tunning
                 var operatorInstance = operators.GetOrAdd(condition.Operator, GetOperatorInstance);
@@ -142,7 +142,7 @@ namespace LambdaBuilder
             //return entities.Provider.CreateQuery<TEntity>(resultExpression);
         }
 
-        public static bool IsNullableType(Type type)
+        bool IsNullableType(Type type)
         {
             if (type == null)
             {
@@ -152,38 +152,14 @@ namespace LambdaBuilder
             return type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>);
         }
 
-        //public static bool IsDateTimeType(Type type)
-        //{
-        //    if (type == null)
-        //    {
-        //        throw new ArgumentNullException(nameof(type));
-        //    }
-
-        //    return type.Equals(typeof(DateTime));
-        //}
-
-        private string GetTypeName(Type type)
+        string GetTypeName(Type type)
         {
             if (IsNullableType(type))
             {
-                //var a = Nullable.GetUnderlyingType(type);
                 return Nullable.GetUnderlyingType(type).FullName;
             }
 
             return type.FullName;
-
-            //var fullName = type.FullName;
-            //if (type.FullName.Contains("System.DateTime") && type.FullName.Contains("System.Nullable"))
-            //    fullName = "System.DateTime";
-            //else if (type.FullName.Contains("System.Guid") && type.FullName.Contains("System.Nullable"))
-            //    fullName = "System.Guid";
-            //else if (
-            //    (!type.IsGenericType && type.IsEnum)
-            //    || (type.IsGenericType && Nullable.GetUnderlyingType(type).BaseType == typeof(Enum))
-            //    )
-            //    fullName = "System.Enum";
-
-            //return fullName;
         }
 
         /// <summary>
@@ -192,7 +168,7 @@ namespace LambdaBuilder
         /// <param name="prop"><see cref="PropertyInfo"/> of member</param>
         /// <param name="value">String value for constant. This value will convert to proprty type</param>
         /// <returns></returns>
-        public Expression ToExpressionConstant(Type type, string value, CultureInfo cultureInfo)
+        Expression CreateConstantFromType(Type type, string value, CultureInfo cultureInfo)
         {
             if (string.IsNullOrEmpty(value))
                 return Expression.Constant(null);
@@ -206,7 +182,7 @@ namespace LambdaBuilder
                     val = Guid.Parse(value);
                     break;
                 case "System.DateTime":
-                    val = CultureFormatter.ParseDateTimeStringFromCulture(value, cultureInfo);
+                    val = CultureFormatHelper.ParseDateTimeStringFromCulture(value, cultureInfo);
                     break;
                 case "System.Enum":
                     val = Int32.Parse(value);
@@ -219,7 +195,5 @@ namespace LambdaBuilder
             return Expression.Constant(val, type);
 
         }
-
-
     }
 }
