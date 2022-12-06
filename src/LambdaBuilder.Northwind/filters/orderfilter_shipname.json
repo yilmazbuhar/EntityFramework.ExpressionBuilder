@@ -5,6 +5,12 @@
       "Member": "ShipName",
       "Operator": "contains",
       "Value": "toms",
+      "Active": false
+    },
+    {
+      "Member": "ShippedDate",
+      "Operator": "greaterthan",
+      "Value": "01.05.1997",
       "Active": true
     }
   ],

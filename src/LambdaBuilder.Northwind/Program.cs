@@ -1,11 +1,12 @@
-﻿// See https://aka.ms/new-console-template for more information
-using LambdaBuilder;
+﻿using LambdaBuilder;
 using LambdaBuilder.Northwind;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using System.Globalization;
+using Xunit;
 
 var hostBuilder = Host.CreateDefaultBuilder()
     .ConfigureAppConfiguration(cb =>
@@ -19,23 +20,40 @@ var hostBuilder = Host.CreateDefaultBuilder()
             optionBuilder.UseSqlServer(ctx.Configuration.GetConnectionString("default"));
         });
     })
-    .ConfigureLogging(x =>
+    .ConfigureLogging(log =>
     {
-        x.ClearProviders();
+        log.ClearProviders();
     })
     .Build();
 
 var dbContext = hostBuilder.Services.GetService<NorthwindContext>();
 
+string[] cultures = new[] { "en-US", "en-GB", "tr-TR", "zh-Hans", "zh-Hant" };
 
-// Generate mock request --------------------------------------------------
-var jsonFilter = File.ReadAllText("filterdata.json");
-
-// Send to database -------------------------------------------------------
-//var data1 = dbContext.Orders.Where(x => x.ShipName.Contains("toms"));
-var data = await dbContext.Orders.ApplyFilterAndSort(jsonFilter, null);
-
-foreach (var item in data)
+foreach (var item in cultures)
 {
-    Console.WriteLine($"{item.ShipName} -> {item.OrderDate}");
+    CultureInfo us = new CultureInfo(item);
+    var datetimeformatString = us.DateTimeFormat.ShortDatePattern;
+    string shortTimeFormatString = us.DateTimeFormat.ShortTimePattern;
+
+    Console.WriteLine($"{datetimeformatString} {shortTimeFormatString}");
+    Console.WriteLine();
 }
+
+
+OrderFilter("filters/orderfilter_shipname.json");
+
+void OrderFilter(string filterfile)
+{
+    // Generate mock request --------------------------------------------------
+    var jsonFilter = File.ReadAllText(filterfile);
+
+    // Send to database -------------------------------------------------------
+    var data = dbContext.Orders.ApplyFilterAndSort(jsonFilter).Result;
+
+    foreach (var item in data)
+    {
+        Console.WriteLine($"{item.ShippedDate}");
+    }
+}
+

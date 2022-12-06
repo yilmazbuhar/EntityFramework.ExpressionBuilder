@@ -12,7 +12,6 @@ namespace LambdaBuilder
         static readonly ConcurrentDictionary<string, IOperator> operators =
             new ConcurrentDictionary<string, IOperator>(StringComparer.OrdinalIgnoreCase);
 
-
         /// <summary>
         /// Generic property finder. Supports subtypes.
         /// </summary>
@@ -71,13 +70,13 @@ namespace LambdaBuilder
 
                 var property = CreateProperty<TEntity>(parameter, condition.Member);
                 // todo: Constant for decimal and datetime
-                var constant = Expression.Constant(condition.Value, property.Type);
+                var constant = ToExpressionConstant(property.Type, condition.Value);// Expression.Constant(condition.Value, property.Type);
 
                 //todo: performans tunning
                 var operatorInstance = operators.GetOrAdd(condition.Operator, GetOperatorInstance);
-                
+
                 ArgumentNullException.ThrowIfNull(operatorInstance, "operatorInstance");
-                
+
                 returnExp = operatorInstance.Invoke<TEntity>(parameter, property, constant);
 
                 if (string.IsNullOrEmpty(logicalOperator) || logicalOperator.ToLower() == "and")
@@ -128,7 +127,6 @@ namespace LambdaBuilder
             return Expression.Lambda<Func<TEntity, object>>(Expression.Convert(property, typeof(object)), param);
             #endregion
 
-
             #region Working Model 3
             //var type = typeof(TEntity);
             //var parameter = Expression.Parameter(type, "p");
@@ -142,52 +140,80 @@ namespace LambdaBuilder
             //return entities.Provider.CreateQuery<TEntity>(resultExpression);
         }
 
+        public static bool IsNullableType(Type type)
+        {
+            if (type == null)
+            {
+                throw new ArgumentNullException(nameof(type));
+            }
+
+            return type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>);
+        }
+
+        public static bool IsDateTimeType(Type type)
+        {
+            if (type == null)
+            {
+                throw new ArgumentNullException(nameof(type));
+            }
+
+            return type.Equals(typeof(DateTime));
+        }
+
+        private string GetTypeName(Type type)
+        {
+            var fullName = type.FullName;
+            if (type.FullName.Contains("System.DateTime") && type.FullName.Contains("System.Nullable"))
+                fullName = "System.DateTime";
+            else if (type.FullName.Contains("System.Guid") && type.FullName.Contains("System.Nullable"))
+                fullName = "System.Guid";
+            else if (
+                (!type.IsGenericType && type.IsEnum)
+                || (type.IsGenericType && Nullable.GetUnderlyingType(type).BaseType == typeof(Enum))
+                )
+                fullName = "System.Enum";
+
+            return fullName;
+        }
+
         /// <summary>
         /// Set constant for given <see cref="PropertyInfo"/>
         /// </summary>
         /// <param name="prop"><see cref="PropertyInfo"/> of member</param>
         /// <param name="value">String value for constant. This value will convert to prop type</param>
         /// <returns></returns>
-        public Expression ToExpressionConstant(PropertyInfo prop, string value)
+        public Expression ToExpressionConstant(Type type, string value)
         {
             if (string.IsNullOrEmpty(value))
                 return Expression.Constant(null);
-            else
+
+            var fullName = GetTypeName(type);
+
+            object val;
+            switch (fullName)
             {
-                var fullName = prop.PropertyType.FullName;
-                if (prop.PropertyType.FullName.Contains("System.DateTime") && prop.PropertyType.FullName.Contains("System.Nullable"))
-                    fullName = "System.DateTime";
-                else if (prop.PropertyType.FullName.Contains("System.Guid") && prop.PropertyType.FullName.Contains("System.Nullable"))
-                    fullName = "System.Guid";
-                else if (
-                    (!prop.PropertyType.IsGenericType && prop.PropertyType.IsEnum)
-                    || (prop.PropertyType.IsGenericType && Nullable.GetUnderlyingType(prop.PropertyType).BaseType == typeof(Enum))
-                    )
-                    fullName = "System.Enum";
-
-
-                object val;
-                switch (fullName)
-                {
-                    case "System.Guid":
-                        val = Guid.Parse(value);
-                        break;
-                    case "System.DateTime":
-                        if (DateTime.TryParseExact(value, "dd.MM.yyyy HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out var result))
-                            val = result;
-                        else
-                            val = DateTime.ParseExact(value, "dd.MM.yyyy", CultureInfo.InvariantCulture);
-                        break;
-                    case "System.Enum":
-                        val = Int32.Parse(value);
-                        break;
-                    default:
-                        Type t = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
-                        val = Convert.ChangeType(value, Type.GetType(t.FullName));
-                        break;
-                }
-                return Expression.Constant(val);
+                case "System.Guid":
+                    val = Guid.Parse(value);
+                    break;
+                case "System.DateTime":
+                    //if (DateTime.TryParseExact(value, "dd.MM.yyyy HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out var result))
+                    //    val = result;
+                    //else
+                    //    val = DateTime.ParseExact(value, "dd.MM.yyyy", CultureInfo.InvariantCulture);
+                    val = CultureFormatter.ParseDateTimeStringFromCulture(value, CultureInfo.InvariantCulture);
+                    break;
+                case "System.Enum":
+                    val = Int32.Parse(value);
+                    break;
+                default:
+                    Type t = Nullable.GetUnderlyingType(type) ?? type;
+                    val = Convert.ChangeType(value, Type.GetType(t.FullName));
+                    break;
             }
+            return Expression.Constant(val, type);
+
         }
+
+
     }
 }

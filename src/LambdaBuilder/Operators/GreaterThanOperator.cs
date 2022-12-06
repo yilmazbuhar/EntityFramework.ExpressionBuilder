@@ -8,7 +8,7 @@ namespace LambdaBuilder
 
         public Expression<Func<TEntity, bool>> Invoke<TEntity>(ParameterExpression paramExp, Expression left, Expression right)
         {
-            return Expression.Lambda<Func<TEntity, bool>>(Expression.GreaterThan(left, right));
+            return Expression.Lambda<Func<TEntity, bool>>(Expression.GreaterThan(left, right), paramExp);
         }
     }
 }
