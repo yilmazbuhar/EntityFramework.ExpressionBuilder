@@ -24,7 +24,7 @@ namespace LambdaBuilder.Infra
         public static PropertyInfo GetProperty(Type type, string propertyName)
         {
             string typeName = string.Empty;
-            if (propertyName.Contains("."))
+            if (propertyName.Contains(".")) 
             {
                 //name was specified with typename - so pull out the typename
                 typeName = propertyName.Substring(0, propertyName.IndexOf("."));

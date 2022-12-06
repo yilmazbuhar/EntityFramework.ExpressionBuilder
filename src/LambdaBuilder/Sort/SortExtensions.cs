@@ -39,21 +39,21 @@ namespace LambdaBuilder
             return source.Provider.CreateQuery<TEntity>(orderExpression);
         }
 
-        public static IQueryable<T> OrderBy<T>(this IQueryable<T> source, string sortProperty, ListSortDirection sortOrder)
-        {
-            var type = typeof(T);
-            var parameter = Expression.Parameter(type, "p");
+        //public static IQueryable<T> OrderBy<T>(this IQueryable<T> source, string sortProperty, ListSortDirection sortOrder)
+        //{
+        //    var type = typeof(T);
+        //    var parameter = Expression.Parameter(type, "p");
 
-            var property = type.GetProperty(sortProperty);
+        //    var property = type.GetProperty(sortProperty);
 
-            var propertyAccess = Expression.MakeMemberAccess(parameter, property);
-            var orderByExp = Expression.Lambda(propertyAccess, parameter);
-            var typeArguments = new Type[] { type, property.PropertyType };
-            var methodName = sortOrder == ListSortDirection.Ascending ? "OrderBy" : "OrderByDescending";
-            var resultExp = Expression.Call(typeof(Queryable), methodName, typeArguments, source.Expression, Expression.Quote(orderByExp));
+        //    var propertyAccess = Expression.MakeMemberAccess(parameter, property);
+        //    var orderByExp = Expression.Lambda(propertyAccess, parameter);
+        //    var typeArguments = new Type[] { type, property.PropertyType };
+        //    var methodName = sortOrder == ListSortDirection.Ascending ? "OrderBy" : "OrderByDescending";
+        //    var resultExp = Expression.Call(typeof(Queryable), methodName, typeArguments, source.Expression, Expression.Quote(orderByExp));
 
-            return source.Provider.CreateQuery<T>(resultExp);
-        }
+        //    return source.Provider.CreateQuery<T>(resultExp);
+        //}
 
         private static PropertyInfo SearchProperty(Type type, string propertyName)
         {
