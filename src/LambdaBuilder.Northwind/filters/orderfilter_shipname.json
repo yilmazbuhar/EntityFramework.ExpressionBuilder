@@ -1,5 +1,6 @@
 {
   "LogicalOperator": "OR",
+  "Culture": "tr-TR",
   "Where": [
     {
       "Member": "ShipName",
@@ -10,7 +11,7 @@
     {
       "Member": "ShippedDate",
       "Operator": "greaterthan",
-      "Value": "01.05.1997",
+      "Value": "01/05/1997",
       "Active": true
     }
   ],

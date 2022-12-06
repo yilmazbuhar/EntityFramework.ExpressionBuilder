@@ -15,7 +15,7 @@ public partial class Order
 
     public DateTime? RequiredDate { get; set; }
 
-    public DateTime ShippedDate { get; set; }
+    public DateTime? ShippedDate { get; set; }
 
     public int? ShipVia { get; set; }
 

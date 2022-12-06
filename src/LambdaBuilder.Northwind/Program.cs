@@ -6,7 +6,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System.Globalization;
-using Xunit;
 
 var hostBuilder = Host.CreateDefaultBuilder()
     .ConfigureAppConfiguration(cb =>
