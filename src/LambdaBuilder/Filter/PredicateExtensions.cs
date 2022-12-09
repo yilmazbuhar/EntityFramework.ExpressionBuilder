@@ -35,8 +35,8 @@ namespace LambdaBuilder
             var conditions = await queryFormatter.Compile(query);
 
             var predicateBuilder = new PredicateLambdaBuilder();
-            var lambda = await predicateBuilder.GenerateConditionLambda<TEntity>(conditions.Where, 
-                new CultureInfo(conditions.Region), 
+            var lambda = await predicateBuilder.GenerateConditionLambda<TEntity>(conditions.Where,
+                string.IsNullOrEmpty(conditions.Region) ? CultureInfo.InvariantCulture : new CultureInfo(conditions.Region),
                 conditions.LogicalOperator);
 
             source = lambda == null ? source : source.Where(lambda);

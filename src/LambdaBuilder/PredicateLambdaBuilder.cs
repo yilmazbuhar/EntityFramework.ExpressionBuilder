@@ -165,7 +165,7 @@ namespace LambdaBuilder
         /// <summary>
         /// Set constant for given <see cref="PropertyInfo"/>
         /// </summary>
-        /// <param name="prop"><see cref="PropertyInfo"/> of member</param>
+        /// <param name="prop">Member of <see cref="PropertyInfo"/></param>
         /// <param name="value">String value for constant. This value will convert to proprty type</param>
         /// <returns></returns>
         Expression CreateConstantFromType(Type type, string value, CultureInfo cultureInfo)

@@ -6,12 +6,31 @@ namespace LambdaBuilder
     {
         public static DateTime? ParseDateTimeStringFromCulture(string datestring, CultureInfo cultureInfo)
         {
-            var datetimeformatString = cultureInfo.DateTimeFormat.ShortDatePattern;
-            string shortTimeFormatString = cultureInfo.DateTimeFormat.ShortTimePattern;
+            var shortDatePattern = cultureInfo.DateTimeFormat.ShortDatePattern;
+            string shortTimePattern = cultureInfo.DateTimeFormat.ShortTimePattern;
 
-            string format = $"{datetimeformatString} {shortTimeFormatString}";
+            string longDateTimePattern = $"{shortDatePattern} {shortTimePattern}";
 
-            return ParseDateTimeStringFromFormat(datestring, format);
+            if (DateTime.TryParseExact(datestring, 
+                shortDatePattern, 
+                CultureInfo.InvariantCulture, 
+                DateTimeStyles.AdjustToUniversal, 
+                out var date))
+            {
+                return date;
+            }
+
+            if (DateTime.TryParseExact(datestring, 
+                longDateTimePattern, 
+                CultureInfo.InvariantCulture, 
+                DateTimeStyles.AdjustToUniversal, 
+                out var datetime))
+            {
+                return datetime;
+            }
+
+
+            throw new FormatException($"Datetime format must be {shortDatePattern} or {longDateTimePattern} for your culture. You can specify culture on query.");
         }
 
         // OpenAI wrote this code
