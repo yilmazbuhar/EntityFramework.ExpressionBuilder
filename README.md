@@ -40,3 +40,4 @@ var filteredcustomers = await customerdb.Customer
 * ~~Multiple sort field~~
 * Paging
 * Performance tunning
+* Specification Pattern Support
